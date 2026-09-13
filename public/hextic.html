@@ -71,7 +71,7 @@
     background-clip:text;
     color:transparent;
   }
-  .tagline{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-top:2px;}
+  .tagline{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-top:2px;margin-left: 2px;}
 
   .balance-box{
     background:var(--panel);
@@ -831,11 +831,11 @@
 </head>
 <body>
 <div class="app">
-
   <header>
     <div>
       <div class="logo"><span class="hex">HEX</span>TIC</div>
-      <div class="tagline">6 reels &middot; 1 color &middot; 36 bets</div>
+      <!-- <div class="tagline">6 reels &middot; 1 color &middot; 36 bets</div> -->
+       <div class="tagline">Prototype</div>
     </div>
     <div class="balance-box">
       <div class="label">Balance</div>
@@ -953,6 +953,7 @@
       </div>
     </div>
     <div class="hint">Pick a chip and a mode (<b>+</b> to add, <b>&minus;</b> to remove), then click a square &mdash; up to your max bet per square, min $5. Each row's payout is derived live from its true odds and an editable <b>Edge %</b> &mdash; change it and the payout updates instantly. "Current edge on your bet" shows the odds-weighted average across whatever you've actually staked. Each of the 6 reels above lands on its own hex digit for that column, building the final color live. Squares you actually won stay <span style="color:var(--gold);">gold</span>; every winning square (bet or not) gets a <span style="color:var(--green);">green outline</span> until the next spin.</div>
+    <span class="hint">©2026 NUTORIOUS LLC. All rights reserved.</span>
   </section>
 </div>
 

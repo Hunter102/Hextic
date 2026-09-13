@@ -1,3 +1,13 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Hextic",
+  description: "Color Your Victory",
+  icons: {
+    icon: "/icon.png",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -5,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body style={{ margin: 0, padding: 0 }}>
+        {children}
+      </body>
     </html>
   );
 }
