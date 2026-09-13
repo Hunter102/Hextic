@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hextic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D14;
+    --panel:#12161F;
+    --panel-2:#171C27;
+    --border:#262C3A;
+    --text:#ECE9E3;
+    --muted:#8891A5;
+    --gold:#E8B44D;
+    --loss:#E2536B;
+    --green:#4ED18C;
+    --win-glow: rgba(232,180,77,0.55);
+
+    --row-num09:#3FA796;
+    --row-letaf:#4F9DDE;
+    --row-even:#8C7AE6;
+    --row-odd:#A66DE8;
+    --row-consonant:#D8608A;
+    --row-vowel:#E8B44D;
+    --row-exact:#7C5CFF;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% -10%, #1a2030 0%, transparent 45%),
+      radial-gradient(circle at 90% 10%, #201526 0%, transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:28px 20px 60px;
+    overflow-x:hidden;
+  }
+
+  .app{max-width:1180px;margin:0 auto;}
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-bottom:24px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--border);
+  }
+
+  .logo{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:28px;
+    letter-spacing:1px;
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+  }
+  .logo span.hex{
+    font-family:'JetBrains Mono',monospace;
+    background:linear-gradient(120deg,#3FA796,#4F9DDE,#8C7AE6,#D8608A,#E8B44D);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .tagline{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-top:2px;}
+
+  .balance-box{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 20px;
+    text-align:right;
+  }
+  .balance-box .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .balance-box .amount{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--gold);}
+
+  .game-panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    margin-bottom:24px;
+  }
+
+  .color-banner{
+    width:100%;
+    max-width:520px;
+    height:96px;
+    border-radius:12px;
+    background:#000000;
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background-color 0.35s ease;
+    box-shadow:inset 0 0 30px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .color-hex{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:1px;
+    color:#fff;
+    background:rgba(0,0,0,0.42);
+    padding:6px 18px;
+    border-radius:8px;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6);
+  }
+
+  .reels-row{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    max-width:100%;
+    padding:2px;
+  }
+  .reel{
+    width:56px;
+    flex-shrink:0;
+    text-align:center;
+  }
+  .reel-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    margin-bottom:4px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .reel-window{
+    height:120px;
+    overflow:hidden;
+    position:relative;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    box-shadow:inset 0 0 12px rgba(0,0,0,0.4);
+    transition:box-shadow 0.2s ease;
+  }
+  .reel-window::before{
+    content:'';
+    position:absolute;
+    top:40px; left:0; right:0; height:40px;
+    border-top:1px solid var(--gold);
+    border-bottom:1px solid var(--gold);
+    background:rgba(232,180,77,0.06);
+    pointer-events:none;
+    z-index:2;
+  }
+  .reel-window.bet-active{
+    border-color:var(--gold);
+    box-shadow:0 0 10px rgba(232,180,77,0.35), inset 0 0 12px rgba(0,0,0,0.4);
+  }
+  .reel-window.reel-win{
+    border-color:var(--green);
+    box-shadow:0 0 14px rgba(78,209,140,0.5), inset 0 0 12px rgba(0,0,0,0.4);
+  }
+  .reel-window.reel-miss{
+    border-color:var(--loss);
+    box-shadow:0 0 14px rgba(226,83,107,0.5), inset 0 0 12px rgba(0,0,0,0.4);
+  }
+  .reel-strip{
+    display:flex;
+    flex-direction:column;
+    will-change:transform;
+  }
+  .reel-strip .char{
+    height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:20px;
+    color:var(--muted);
+  }
+
+  .total-bet-top{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .total-bet-top b{color:var(--gold); font-size:15px;}
+
+  #spinBtn{
+    width:100%;
+    max-width:520px;
+    padding:14px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:1.5px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg,#E8B44D,#D8608A);
+    color:#181112;
+    cursor:pointer;
+    transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  #spinBtn:hover:not(:disabled){transform:translateY(-2px);}
+  #spinBtn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .result-display{
+    width:100%;
+    max-width:520px;
+    min-height:64px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 16px;
+    text-align:center;
+  }
+  .result-display .hex-result{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+  }
+  .result-display .cats{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:4px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .result-display .net{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:15px;
+    margin-top:6px;
+  }
+  .net.win{color:#7CE0A8;}
+  .net.lose{color:var(--loss);}
+  .net-gain{color:#7CE0A8; font-weight:600;}
+  .net-loss{color:var(--muted); font-weight:600;}
+
+  .bonus-line{
+    margin-top:8px;
+    padding:6px 10px;
+    border-radius:8px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:12px;
+  }
+  .hextic-line{
+    background:linear-gradient(90deg, rgba(124,92,255,0.25), rgba(232,180,77,0.25));
+    color:var(--gold);
+    border:1px solid var(--row-exact);
+  }
+  .perfect-line{
+    background:rgba(78,209,140,0.15);
+    color:var(--green);
+    border:1px solid var(--green);
+  }
+
+  .jackpot-panel{
+    width:100%;
+    max-width:520px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 16px;
+    text-align:center;
+  }
+  .jackpot-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:6px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  #jackpotAmt{
+    width:60px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 6px;
+    border-radius:6px;
+    text-align:center;
+  }
+  #jackpotAmt:focus{outline:none; border-color:var(--gold);}
+  .jackpot-value{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:22px;
+    color:var(--gold);
+    margin-top:6px;
+  }
+
+  .history-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .section-lbl{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+
+  .history{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .history .chip-hist{
+    width:24px;height:24px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    font-weight:700;
+  }
+
+  .table-panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    min-width:0;
+  }
+
+  .controls-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+
+  .chip-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .chip-row .lbl, .mode-row .lbl, .maxbet-row .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-right:6px;}
+  .chip{
+    width:46px;height:46px;
+    border-radius:50%;
+    border:2px dashed rgba(255,255,255,0.35);
+    background:var(--panel-2);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+    flex-shrink:0;
+  }
+  .chip:hover{border-color:var(--gold);}
+  .chip.active{
+    border:2px solid var(--gold);
+    background:radial-gradient(circle at 35% 30%, #3a2e14, var(--panel-2));
+    box-shadow:0 0 10px rgba(232,180,77,0.4);
+    transform:scale(1.06);
+  }
+
+  .mode-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .mode-switch{
+    display:flex;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:3px;
+    gap:3px;
+  }
+  .mode-btn{
+    width:36px;
+    height:32px;
+    border:none;
+    border-radius:6px;
+    background:transparent;
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .mode-btn.plus.active{background:var(--green); color:#0d1710;}
+  .mode-btn.minus.active{background:var(--loss); color:#1a0d0f;}
+  .mode-btn:hover:not(.active){color:var(--text);}
+
+  .maxbet-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  #maxBetInput{
+    width:84px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:600;
+    padding:7px 8px;
+    border-radius:8px;
+  }
+  #maxBetInput:focus{outline:none; border-color:var(--gold);}
+
+  .color-bet-panel{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .color-bet-panel > .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .color-bet-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .mini-wheel-wrap{
+    position:relative;
+    width:120px;
+    height:120px;
+    flex-shrink:0;
+  }
+  #miniWheel{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    border:4px solid #1c2130;
+    box-shadow:0 0 0 2px #33394a, inset 0 0 14px rgba(0,0,0,0.35);
+    cursor:crosshair;
+  }
+  .mini-pick{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:12px;
+    height:12px;
+    margin:-6px 0 0 -6px;
+    border-radius:50%;
+    border:2px solid #fff;
+    box-shadow:0 0 4px rgba(0,0,0,0.6);
+    pointer-events:none;
+    display:none;
+  }
+  .wheel-history{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:3;
+  }
+  .wheel-token{
+    position:absolute;
+    width:16px;
+    height:16px;
+    margin:-8px 0 0 -8px;
+    border-radius:50%;
+    border:1.5px solid rgba(255,255,255,0.85);
+    box-shadow:0 0 3px rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:8px;
+    font-weight:700;
+    line-height:1;
+  }
+  .wheel-token.last{
+    width:19px;
+    height:19px;
+    margin:-9.5px 0 0 -9.5px;
+    border:2px solid var(--gold);
+    box-shadow:0 0 7px var(--win-glow);
+    font-size:9px;
+    z-index:2;
+  }
+
+  .wheel-column{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  #useLastColorBtn{
+    padding:6px 10px;
+    font-size:10px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    border-radius:7px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--muted);
+    cursor:pointer;
+    transition:all 0.15s ease;
+    white-space:nowrap;
+  }
+  #useLastColorBtn:hover:not(:disabled){border-color:var(--gold); color:var(--gold);}
+  #useLastColorBtn:disabled{opacity:0.35; cursor:not-allowed;}
+  .color-bet-info{
+    flex:1;
+    min-width:200px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .picked-line{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .picked-swatch{
+    width:28px;
+    height:28px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:transparent;
+    flex-shrink:0;
+  }
+  .picked-hex{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:15px;
+    color:var(--text);
+  }
+  #placeColorBtn{
+    align-self:flex-start;
+    padding:9px 18px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(135deg,#E8B44D,#D8608A);
+    color:#181112;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  #placeColorBtn:hover:not(:disabled){transform:translateY(-1px);}
+  #placeColorBtn:disabled{opacity:0.35; cursor:not-allowed;}
+  .color-bet-status{font-size:11px; color:var(--muted); line-height:1.4;}
+  .chosen-colors-block{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .chosen-colors{
+    display:flex;
+    gap:5px;
+    flex-wrap:wrap;
+  }
+  .chosen-color-dot{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.3);
+    box-shadow:0 0 3px rgba(0,0,0,0.5);
+  }
+
+  .table-scroll{
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+
+  table.bet-grid{
+    border-collapse:separate;
+    border-spacing:6px;
+    width:100%;
+    min-width:620px;
+  }
+  table.bet-grid th{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    padding-bottom:4px;
+  }
+  .col-head{padding:0 0 6px;}
+  .col-num{font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .col-digit{
+    display:inline-block;
+    min-width:22px;
+    padding:3px 6px;
+    border-radius:6px;
+    background:var(--panel-2);
+    border:1px dashed var(--border);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    color:var(--muted);
+    transition:all 0.2s ease;
+  }
+  .col-digit.locked{
+    color:#0d0d0d;
+    border:1px solid rgba(255,255,255,0.3);
+  }
+  .row-label-cell{
+    text-align:left;
+    padding-right:10px;
+    white-space:nowrap;
+    min-width:158px;
+  }
+  .row-label-cell .cat-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .row-label-cell .cat-mult{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .row-label-cell{border-left:4px solid; border-radius:4px; padding:6px 0 6px 10px;}
+
+  .row-divider td{padding:2px 0;}
+  .row-divider-line{
+    height:2px;
+    width:100%;
+    background:linear-gradient(90deg, transparent, var(--row-exact), transparent);
+    opacity:0.6;
+  }
+
+  .edge-control{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    margin-top:4px;
+  }
+  .edge-lbl{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+  .edge-input{
+    width:44px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    padding:2px 4px;
+    border-radius:5px;
+  }
+  .edge-input:focus{outline:none; border-color:var(--gold);}
+  .edge-input:disabled{opacity:0.4;}
+
+  .info-icon{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:15px;
+    height:15px;
+    border-radius:50%;
+    border:1px solid var(--muted);
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    font-weight:700;
+    cursor:help;
+    flex-shrink:0;
+  }
+  .info-icon:hover, .info-icon:focus{
+    border-color:var(--gold);
+    color:var(--gold);
+    outline:none;
+  }
+  .info-icon .tooltip{
+    visibility:hidden;
+    opacity:0;
+    position:absolute;
+    left:20px;
+    top:50%;
+    transform:translateY(-50%);
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    padding:7px 11px;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    font-weight:500;
+    color:var(--text);
+    white-space:nowrap;
+    z-index:20;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+    transition:opacity 0.12s ease;
+    pointer-events:none;
+  }
+  .info-icon:hover .tooltip, .info-icon:focus .tooltip{
+    visibility:visible;
+    opacity:1;
+  }
+
+  td.cell{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    height:60px;
+    width:16.6%;
+    padding:5px 6px;
+    text-align:center;
+    vertical-align:middle;
+    cursor:pointer;
+    position:relative;
+    transition:background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    user-select:none;
+  }
+  td.cell:hover{border-color:var(--gold); transform:translateY(-1px);}
+  td.cell .bet-amt{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+    color:var(--gold);
+  }
+  td.cell .bet-amt.ghost{
+    color:var(--muted);
+    font-style:italic;
+    font-weight:600;
+    opacity:0.75;
+  }
+  .exact-digit-select{
+    display:block;
+    width:100%;
+    margin-bottom:4px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--row-exact);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    text-align:center;
+    text-align-last:center;
+    border-radius:6px;
+    padding:2px 0;
+    cursor:pointer;
+  }
+  .exact-digit-select:focus{outline:none; border-color:var(--row-exact);}
+  .exact-digit-select:disabled{opacity:0.4; cursor:not-allowed;}
+  td.cell.gold-win{
+    background:radial-gradient(circle, rgba(232,180,77,0.4), var(--panel-2));
+    border-color:var(--green);
+    box-shadow:0 0 14px var(--win-glow);
+    animation:pulseWin 0.9s ease;
+  }
+  td.cell.green-outline{
+    outline:2px solid var(--green);
+    outline-offset:-2px;
+    border-color:var(--green);
+  }
+  @keyframes pulseWin{
+    0%{transform:scale(1);}
+    30%{transform:scale(1.06);}
+    100%{transform:scale(1);}
+  }
+
+  .grid-locked{pointer-events:none; opacity:0.9;}
+
+  .footer-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    padding-top:6px;
+    border-top:1px solid var(--border);
+  }
+  .total-bet{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .total-bet b{color:var(--text);}
+  .btn-group{display:flex; gap:8px; flex-wrap:wrap;}
+  #clearBtn, #rebetBtn, #clearBoardBtn{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    padding:8px 14px;
+    border-radius:8px;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all 0.15s ease;
+  }
+  #clearBtn:hover{border-color:var(--loss); color:var(--loss);}
+  #clearBoardBtn:hover{border-color:var(--muted); color:var(--text);}
+  #clearBtn:disabled, #rebetBtn:disabled, #clearBoardBtn:disabled{opacity:0.3;cursor:not-allowed;}
+  #rebetBtn{border-color:var(--gold); color:var(--gold);}
+  #rebetBtn:hover:not(:disabled){background:rgba(232,180,77,0.12);}
+
+  .hint{font-size:11px;color:var(--muted); line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <div class="logo"><span class="hex">HEX</span>TIC</div>
+      <div class="tagline">6 reels &middot; 1 color &middot; 36 bets</div>
+    </div>
+    <div class="balance-box">
+      <div class="label">Balance</div>
+      <div class="amount" id="balanceDisplay">$1000</div>
+    </div>
+  </header>
+
+  <section class="game-panel">
+    <div class="color-banner" id="colorBanner">
+      <div class="color-hex" id="colorHex">#000000</div>
+    </div>
+
+    <div class="reels-row" id="reelsRow"></div>
+
+    <div class="total-bet-top">Total on table: <b id="totalBetTop">$0</b> &middot; Last bet: <b id="lastBetTop">$0</b></div>
+
+    <button id="spinBtn">SPIN</button>
+
+    <div class="result-display" id="resultDisplay">
+      <div class="hex-result" style="color:var(--muted);">--</div>
+      <div class="cats">place your bets to begin</div>
+    </div>
+
+    <div class="jackpot-panel" id="jackpotPanel">
+      <div class="jackpot-row">
+        <span class="lbl">Jackpot potential &mdash; if you'd bet $</span>
+        <input type="number" id="jackpotAmt" value="5" min="1" step="1">
+        <span class="lbl">on every green square this round:</span>
+      </div>
+      <div class="jackpot-value" id="jackpotValue">--</div>
+    </div>
+
+    <div class="history-block">
+      <div class="section-lbl">Previous Rolls</div>
+      <div class="history" id="historyRow"></div>
+    </div>
+  </section>
+
+  <section class="table-panel">
+    <div class="controls-row">
+      <div class="chip-row">
+        <span class="lbl">Chip</span>
+        <button class="chip active" data-val="5">$5</button>
+        <button class="chip" data-val="10">$10</button>
+        <button class="chip" data-val="25">$25</button>
+        <button class="chip" data-val="50">$50</button>
+        <button class="chip" data-val="100">$100</button>
+      </div>
+      <div class="mode-row">
+        <span class="lbl">Mode</span>
+        <div class="mode-switch">
+          <button type="button" class="mode-btn plus active" id="modeAdd">+</button>
+          <button type="button" class="mode-btn minus" id="modeRemove">&minus;</button>
+        </div>
+      </div>
+      <div class="maxbet-row">
+        <span class="lbl">Max bet / square</span>
+        <input type="number" id="maxBetInput" value="250" min="5" step="5">
+      </div>
+      <div class="maxbet-row">
+        <span class="lbl">Perfect Board bonus</span>
+        <input type="number" id="perfectBonusInput" value="2" min="1" step="0.5">x
+      </div>
+    </div>
+
+    <div class="color-bet-panel">
+      <span class="lbl">Bet by Color</span>
+      <div class="color-bet-row">
+        <div class="wheel-column">
+          <div class="mini-wheel-wrap">
+            <canvas id="miniWheel" width="120" height="120"></canvas>
+            <div class="wheel-history" id="wheelHistory"></div>
+            <div class="mini-pick" id="miniPick"></div>
+          </div>
+          <button id="useLastColorBtn" disabled>Bet Last Rolled Color</button>
+        </div>
+        <div class="color-bet-info">
+          <div class="picked-line">
+            <div class="picked-swatch" id="pickedSwatch"></div>
+            <div class="picked-hex" id="pickedHex">Pick a color</div>
+          </div>
+          <button id="placeColorBtn" disabled>PLACE ON MATCHING SQUARES</button>
+          <div class="color-bet-status" id="colorBetStatus">Uses your selected chip amount on every square that color would win.</div>
+          <div class="chosen-colors-block" id="chosenColorsBlock" style="display:none;">
+            <span class="section-lbl">Colors in this bet:</span>
+            <div class="chosen-colors" id="chosenColorsRow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="bet-grid" id="betGrid">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0"></div></th>
+            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1"></div></th>
+            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2"></div></th>
+            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3"></div></th>
+            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4"></div></th>
+            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5"></div></th>
+          </tr>
+        </thead>
+        <tbody id="gridBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-row">
+      <div class="total-bet">Total on table: <b id="totalBet">$0</b> &middot; Last bet: <b id="lastBetBottom">$0</b> &middot; Current edge on your bet: <b id="currentEdgeDisplay">--</b></div>
+      <div class="btn-group">
+        <button id="rebetBtn">Re-bet last</button>
+        <button id="clearBtn">Clear all bets</button>
+        <button id="clearBoardBtn">Clear board</button>
+      </div>
+    </div>
+    <div class="hint">Pick a chip and a mode (<b>+</b> to add, <b>&minus;</b> to remove), then click a square &mdash; up to your max bet per square, min $5. Each row's payout is derived live from its true odds and an editable <b>Edge %</b> &mdash; change it and the payout updates instantly. "Current edge on your bet" shows the odds-weighted average across whatever you've actually staked. Each of the 6 reels above lands on its own hex digit for that column, building the final color live. Squares you actually won stay <span style="color:var(--gold);">gold</span>; every winning square (bet or not) gets a <span style="color:var(--green);">green outline</span> until the next spin.</div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // ---------- data ----------
+  function calcMult(prob, edgePct){
+    return Math.round(((1/prob) * (1 - edgePct/100)) * 100) / 100;
+  }
+
+  const ROWS = [
+    {key:'num09',      name:'NUMBER 0\u20139', prob:10/16, edge:5,  color:'var(--row-num09)',     desc:'Wins if the digit is 0\u20139'},
+    {key:'letAF',      name:'LETTER A\u2013F', prob:6/16,  edge:7,  color:'var(--row-letaf)',     desc:'Wins if the digit is A\u2013F'},
+    {key:'even',       name:'EVEN',            prob:5/16,  edge:8,  color:'var(--row-even)',      desc:'Wins on 0, 2, 4, 6, 8 (numbers only)'},
+    {key:'odd',        name:'ODD',             prob:5/16,  edge:8,  color:'var(--row-odd)',       desc:'Wins on 1, 3, 5, 7, 9 (numbers only)'},
+    {key:'consonant',  name:'CONSONANT',       prob:4/16,  edge:12, color:'var(--row-consonant)', desc:'Wins on B, C, D, F'},
+    {key:'vowel',      name:'VOWEL',           prob:2/16,  edge:18, color:'var(--row-vowel)',     desc:'Wins on A or E'},
+    {key:'exact',      name:'EXACT HEX',     prob:1/16,  edge:20, color:'var(--row-exact)',     desc:'Wins only if the digit exactly matches the 0\u2013F value you pick for that column'},
+  ];
+  ROWS.forEach(row=>{ row.mult = calcMult(row.prob, row.edge); });
+  const COLS = 6;
+  const HEX_CHARS = '0123456789ABCDEF';
+  const ITEM_H = 40;
+
+  let balance = 1000;
+  let bets = ROWS.map(()=>Array(COLS).fill(0));
+  let lastBets = null;
+  let selectedChip = 5;
+  let betMode = 'add'; // 'add' | 'remove'
+  let maxBetPerSquare = 250;
+  let perfectBoardBonus = 2;
+  let spinning = false;
+  const reelStrips = [];
+  const reelWindows = [];
+
+  // ---------- elements ----------
+  const balanceDisplay = document.getElementById('balanceDisplay');
+  const spinBtn = document.getElementById('spinBtn');
+  const resultDisplay = document.getElementById('resultDisplay');
+  const historyRow = document.getElementById('historyRow');
+  const gridBody = document.getElementById('gridBody');
+  const totalBetDisplay = document.getElementById('totalBet');
+  const totalBetTop = document.getElementById('totalBetTop');
+  const lastBetTop = document.getElementById('lastBetTop');
+  const lastBetBottom = document.getElementById('lastBetBottom');
+  const clearBtn = document.getElementById('clearBtn');
+  const clearBoardBtn = document.getElementById('clearBoardBtn');
+  const rebetBtn = document.getElementById('rebetBtn');
+  const chipButtons = document.querySelectorAll('.chip');
+  const betGridTable = document.getElementById('betGrid');
+  const maxBetInput = document.getElementById('maxBetInput');
+  const perfectBonusInput = document.getElementById('perfectBonusInput');
+  const modeAddBtn = document.getElementById('modeAdd');
+  const modeRemoveBtn = document.getElementById('modeRemove');
+  const reelsRow = document.getElementById('reelsRow');
+  const colorBanner = document.getElementById('colorBanner');
+  const colorHex = document.getElementById('colorHex');
+  const miniWheel = document.getElementById('miniWheel');
+  const miniPick = document.getElementById('miniPick');
+  const wheelHistory = document.getElementById('wheelHistory');
+  const pickedSwatch = document.getElementById('pickedSwatch');
+  const pickedHexEl = document.getElementById('pickedHex');
+  const placeColorBtn = document.getElementById('placeColorBtn');
+  const colorBetStatus = document.getElementById('colorBetStatus');
+  const chosenColorsBlock = document.getElementById('chosenColorsBlock');
+  const chosenColorsRow = document.getElementById('chosenColorsRow');
+  const useLastColorBtn = document.getElementById('useLastColorBtn');
+  let pickedHex = null;
+  let spinCount = 0;
+  const currentEdgeDisplay = document.getElementById('currentEdgeDisplay');
+  const jackpotAmtInput = document.getElementById('jackpotAmt');
+  const jackpotValueEl = document.getElementById('jackpotValue');
+  let lastDigits = null;
+  let exactTargets = Array(COLS).fill('');
+  let lastExactTargets = null;
+
+  function hexToHsv(hex){
+    const r = parseInt(hex.substr(0,2),16)/255;
+    const g = parseInt(hex.substr(2,2),16)/255;
+    const b = parseInt(hex.substr(4,2),16)/255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    const delta = max-min;
+    let h = 0;
+    if(delta !== 0){
+      if(max === r) h = 60*(((g-b)/delta)%6);
+      else if(max === g) h = 60*(((b-r)/delta)+2);
+      else h = 60*(((r-g)/delta)+4);
+    }
+    if(h < 0) h += 360;
+    const s = max === 0 ? 0 : delta/max;
+    return {h, s};
+  }
+
+  function pickTextColor(hexCode){
+    const r = parseInt(hexCode.substr(0,2),16);
+    const g = parseInt(hexCode.substr(2,2),16);
+    const b = parseInt(hexCode.substr(4,2),16);
+    const luminance = (0.299*r + 0.587*g + 0.114*b)/255;
+    return luminance > 0.6 ? '#111111' : '#ffffff';
+  }
+
+  function addWheelToken(hexCode, num){
+    const {h, s} = hexToHsv(hexCode);
+    const maxR = miniWheel.width/2;
+    const r = s*maxR;
+    const screenAngle = (h-90)*Math.PI/180;
+    const dx = r*Math.cos(screenAngle);
+    const dy = r*Math.sin(screenAngle);
+
+    const prevLast = wheelHistory.querySelector('.wheel-token.last');
+    if(prevLast) prevLast.classList.remove('last');
+
+    const token = document.createElement('div');
+    token.className = 'wheel-token last';
+    token.style.left = (maxR+dx)+'px';
+    token.style.top = (maxR+dy)+'px';
+    token.style.background = '#'+hexCode;
+    token.style.color = pickTextColor(hexCode);
+    token.textContent = num;
+    token.title = `#${hexCode} \u00b7 roll ${num}`;
+    wheelHistory.appendChild(token);
+
+    while(wheelHistory.children.length > 40){
+      wheelHistory.removeChild(wheelHistory.firstChild);
+    }
+  }
+
+  function setPickedColor(hexCode){
+    pickedHex = hexCode;
+    const {h, s} = hexToHsv(hexCode);
+    const maxR = miniWheel.width/2;
+    const r = s*maxR;
+    const screenAngle = (h-90)*Math.PI/180;
+    const dx = r*Math.cos(screenAngle);
+    const dy = r*Math.sin(screenAngle);
+    miniPick.style.display = 'block';
+    miniPick.style.left = (maxR+dx)+'px';
+    miniPick.style.top = (maxR+dy)+'px';
+    pickedSwatch.style.background = '#'+hexCode;
+    pickedHexEl.textContent = '#'+hexCode;
+    placeColorBtn.disabled = spinning;
+  }
+
+  function hsvToRgb(h,s,v){
+    h = ((h%360)+360)%360;
+    const c = v*s;
+    const x = c*(1-Math.abs((h/60)%2-1));
+    const m = v-c;
+    let r=0,g=0,b=0;
+    if(h<60){ r=c; g=x; b=0; }
+    else if(h<120){ r=x; g=c; b=0; }
+    else if(h<180){ r=0; g=c; b=x; }
+    else if(h<240){ r=0; g=x; b=c; }
+    else if(h<300){ r=x; g=0; b=c; }
+    else { r=c; g=0; b=x; }
+    return [Math.round((r+m)*255), Math.round((g+m)*255), Math.round((b+m)*255)];
+  }
+  function hsvToHex(h,s,v){
+    const [r,g,b] = hsvToRgb(h,s,v);
+    const toHex = n => n.toString(16).padStart(2,'0').toUpperCase();
+    return toHex(r)+toHex(g)+toHex(b);
+  }
+
+  function drawMiniWheel(){
+    const size = miniWheel.width;
+    const ctx = miniWheel.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    const cx = size/2, cy = size/2, maxR = size/2;
+    for(let y=0;y<size;y++){
+      for(let x=0;x<size;x++){
+        const dx = x-cx, dy = y-cy;
+        const r = Math.sqrt(dx*dx+dy*dy);
+        const idx = (y*size+x)*4;
+        if(r <= maxR){
+          const sat = r/maxR;
+          const screenAngle = Math.atan2(dy,dx)*180/Math.PI;
+          const hue = ((screenAngle+90)+360)%360;
+          const [rr,gg,bb] = hsvToRgb(hue, sat, 1);
+          img.data[idx]=rr; img.data[idx+1]=gg; img.data[idx+2]=bb; img.data[idx+3]=255;
+        } else {
+          img.data[idx+3]=0;
+        }
+      }
+    }
+    ctx.putImageData(img,0,0);
+  }
+
+  function pickColorAt(clientX, clientY){
+    const rect = miniWheel.getBoundingClientRect();
+    const cx = rect.width/2, cy = rect.height/2;
+    let dx = clientX - rect.left - cx;
+    let dy = clientY - rect.top - cy;
+    const maxR = rect.width/2;
+    let r = Math.sqrt(dx*dx+dy*dy);
+    if(r > maxR){ dx = dx*maxR/r; dy = dy*maxR/r; r = maxR; }
+    const sat = r/maxR;
+    const screenAngle = Math.atan2(dy,dx)*180/Math.PI;
+    const hue = ((screenAngle+90)+360)%360;
+    pickedHex = hsvToHex(hue, sat, 1);
+
+    miniPick.style.display = 'block';
+    miniPick.style.left = (cx+dx)+'px';
+    miniPick.style.top = (cy+dy)+'px';
+    pickedSwatch.style.background = '#'+pickedHex;
+    pickedHexEl.textContent = '#'+pickedHex;
+    placeColorBtn.disabled = spinning;
+  }
+
+  let miniPicking = false;
+  miniWheel.addEventListener('pointerdown', (e)=>{
+    if(spinning) return;
+    miniPicking = true;
+    pickColorAt(e.clientX, e.clientY);
+  });
+  window.addEventListener('pointermove', (e)=>{
+    if(miniPicking) pickColorAt(e.clientX, e.clientY);
+  });
+  window.addEventListener('pointerup', ()=>{ miniPicking = false; });
+
+  let chosenColors = [];
+
+  function renderChosenColors(){
+    chosenColorsRow.innerHTML = '';
+    chosenColors.forEach(hex=>{
+      const dot = document.createElement('div');
+      dot.className = 'chosen-color-dot';
+      dot.style.background = '#'+hex;
+      dot.title = '#'+hex;
+      chosenColorsRow.appendChild(dot);
+    });
+    chosenColorsBlock.style.display = chosenColors.length ? 'flex' : 'none';
+  }
+
+  function placeBetsForHex(hexCode){
+    const digits = hexCode.split('');
+    let placed = 0, blockedMax = 0, blockedBalance = 0;
+
+    for(let c=0;c<COLS;c++){
+      const value = parseInt(digits[c], 16);
+      const cats = classify(value);
+      ROWS.forEach((row, r)=>{
+        if(!cats.has(row.key)) return;
+        if(bets[r][c] + selectedChip > maxBetPerSquare){ blockedMax++; return; }
+        if(balance < selectedChip){ blockedBalance++; return; }
+        balance -= selectedChip;
+        bets[r][c] += selectedChip;
+        placed++;
+      });
+    }
+
+    updateBalance();
+
+    digits.forEach((d, c)=>{
+      exactTargets[c] = d;
+      const sel = document.querySelector(`.exact-digit-select[data-col="${c}"]`);
+      if(sel) sel.value = d;
+    });
+
+    refreshGridDisplay();
+
+    if(placed > 0 && !chosenColors.includes(hexCode)){
+      chosenColors.unshift(hexCode);
+      renderChosenColors();
+    }
+
+    let msg = `Placed $${selectedChip} on ${placed} square${placed===1?'':'s'} for #${hexCode}. Exact Digit row set to match \u2014 no money placed there.`;
+    if(blockedMax > 0) msg += ` ${blockedMax} skipped (max bet reached).`;
+    if(blockedBalance > 0) msg += ` ${blockedBalance} skipped (not enough balance).`;
+    colorBetStatus.textContent = msg;
+  }
+
+  placeColorBtn.addEventListener('click', ()=>{
+    if(spinning || !pickedHex) return;
+    placeBetsForHex(pickedHex);
+  });
+
+  useLastColorBtn.addEventListener('click', ()=>{
+    if(spinning || !lastDigits) return;
+    const hex = lastDigits.join('');
+    setPickedColor(hex);
+    placeBetsForHex(hex);
+  });
+
+  function classify(value){
+    const cats = new Set();
+    if(value <= 9){
+      cats.add('num09');
+      if(value % 2 === 0) cats.add('even'); else cats.add('odd');
+    } else {
+      cats.add('letAF');
+      const letter = value.toString(16).toUpperCase();
+      if(letter === 'A' || letter === 'E') cats.add('vowel'); else cats.add('consonant');
+    }
+    return cats;
+  }
+
+  // ---------- reels ----------
+  function buildReels(){
+    reelsRow.innerHTML = '';
+    for(let c=0;c<COLS;c++){
+      const reel = document.createElement('div');
+      reel.className = 'reel';
+      reel.innerHTML = `
+        <div class="reel-num">Col ${c+1}</div>
+        <div class="reel-window">
+          <div class="reel-strip"><div class="char">\u2013</div><div class="char">\u2013</div><div class="char">\u2013</div></div>
+        </div>
+      `;
+      reelsRow.appendChild(reel);
+      reelStrips[c] = reel.querySelector('.reel-strip');
+      reelWindows[c] = reel.querySelector('.reel-window');
+    }
+  }
+
+  function setStripChars(strip, chars){
+    strip.innerHTML = chars.map(ch=>`<div class="char">${ch}</div>`).join('');
+  }
+
+  function setReelState(c, state){
+    const win = reelWindows[c];
+    win.classList.remove('bet-active','reel-win','reel-miss');
+    if(state) win.classList.add(state);
+  }
+
+  function updateColorBanner(lockedDigits){
+    const hex = lockedDigits.map(d=> d===null ? '0' : d).join('');
+    colorBanner.style.backgroundColor = '#'+hex;
+    colorHex.textContent = '#'+hex;
+  }
+
+  function tooltipText(row){
+    return `${row.desc} \u00b7 ${row.mult}x payout \u00b7 ${row.edge}% edge`;
+  }
+
+  function computeJackpotPotential(amt){
+    if(!lastDigits) return null;
+    let total = 0;
+    for(let c=0;c<COLS;c++){
+      const value = parseInt(lastDigits[c], 16);
+      const cats = classify(value);
+      ROWS.forEach(row=>{
+        const isWin = row.key === 'exact'
+          ? (lastExactTargets && lastDigits[c].toUpperCase() === lastExactTargets[c])
+          : cats.has(row.key);
+        if(isWin) total += amt * row.mult;
+      });
+    }
+    return total;
+  }
+
+  function updateJackpotDisplay(){
+    let amt = parseFloat(jackpotAmtInput.value);
+    if(isNaN(amt) || amt < 0) amt = 0;
+    const val = computeJackpotPotential(amt);
+    jackpotValueEl.textContent = val === null ? '--' : '$'+val.toFixed(2);
+  }
+  jackpotAmtInput.addEventListener('input', updateJackpotDisplay);
+
+  function onEdgeChange(r, input){
+    let v = parseFloat(input.value);
+    if(isNaN(v)) v = ROWS[r].edge;
+    v = Math.max(0, Math.min(95, v));
+    input.value = v;
+    const row = ROWS[r];
+    row.edge = v;
+    row.mult = calcMult(row.prob, v);
+    document.getElementById('mult-'+r).textContent = `${row.mult}x payout \u00b7 ${row.edge}% edge`;
+    document.getElementById('tooltip-'+r).textContent = tooltipText(row);
+    refreshGridDisplay();
+    updateJackpotDisplay();
+  }
+
+  // ---------- grid ----------
+  function buildGrid(){
+    gridBody.innerHTML = '';
+
+    ROWS.forEach((row, r)=>{
+      if(row.key === 'exact'){
+        const dividerTr = document.createElement('tr');
+        dividerTr.className = 'row-divider';
+        const dividerTd = document.createElement('td');
+        dividerTd.colSpan = COLS + 1;
+        dividerTd.innerHTML = `<div class="row-divider-line"></div>`;
+        dividerTr.appendChild(dividerTd);
+        gridBody.appendChild(dividerTr);
+      }
+
+      const tr = document.createElement('tr');
+      const labelTd = document.createElement('td');
+      labelTd.className = 'row-label-cell';
+      labelTd.style.borderLeftColor = row.color;
+      labelTd.innerHTML = `
+        <div class="cat-name">${row.name}<span class="info-icon" tabindex="0">?<span class="tooltip" id="tooltip-${r}">${tooltipText(row)}</span></span></div>
+        <div class="cat-mult" id="mult-${r}">${row.mult}x payout &middot; ${row.edge}% edge</div>
+        <div class="edge-control">
+          <span class="edge-lbl">Edge</span>
+          <input type="number" class="edge-input" id="edgeInput-${r}" value="${row.edge}" min="0" max="95" step="1">
+          <span class="edge-lbl">%</span>
+        </div>
+      `;
+      tr.appendChild(labelTd);
+      labelTd.querySelector('.edge-input').addEventListener('change', (e)=>onEdgeChange(r, e.target));
+
+      for(let c=0;c<COLS;c++){
+        const td = document.createElement('td');
+        td.className = 'cell';
+        td.dataset.row = r;
+        td.dataset.col = c;
+        if(row.key === 'exact'){
+          const dashOption = `<option value=""${exactTargets[c]===''?' selected':''}>\u2013</option>`;
+          const options = dashOption + HEX_CHARS.split('').map(ch=>`<option value="${ch}"${ch===exactTargets[c]?' selected':''}>${ch}</option>`).join('');
+          td.innerHTML = `<select class="exact-digit-select" data-col="${c}">${options}</select><span class="bet-amt"></span>`;
+          const sel = td.querySelector('.exact-digit-select');
+          sel.addEventListener('click', e=>e.stopPropagation());
+          sel.addEventListener('change', e=>{
+            e.stopPropagation();
+            exactTargets[c] = e.target.value;
+          });
+        } else {
+          td.innerHTML = `<span class="bet-amt"></span>`;
+        }
+        td.addEventListener('click', onCellClick);
+        tr.appendChild(td);
+      }
+      gridBody.appendChild(tr);
+    });
+
+    refreshGridDisplay();
+  }
+
+  function refreshGridDisplay(){
+    document.querySelectorAll('td.cell').forEach(td=>{
+      const r = +td.dataset.row, c = +td.dataset.col;
+      const amt = bets[r][c];
+      const span = td.querySelector('.bet-amt');
+      if(amt > 0){
+        span.textContent = '$'+amt;
+        span.className = 'bet-amt';
+      } else if(lastBets && lastBets[r][c] > 0){
+        span.textContent = '$'+lastBets[r][c];
+        span.className = 'bet-amt ghost';
+      } else {
+        span.textContent = '';
+        span.className = 'bet-amt';
+      }
+    });
+    const total = bets.flat().reduce((a,b)=>a+b,0);
+    totalBetDisplay.textContent = '$'+total;
+    totalBetTop.textContent = '$'+total;
+    spinBtn.disabled = spinning || total === 0;
+    clearBtn.disabled = spinning || total === 0;
+    clearBoardBtn.disabled = spinning;
+    const lastSum = lastBets ? lastBets.flat().reduce((a,b)=>a+b,0) : 0;
+    rebetBtn.disabled = spinning || lastSum === 0;
+    lastBetTop.textContent = '$'+lastSum;
+    lastBetBottom.textContent = '$'+lastSum;
+
+    let weightedEdge = 0;
+    ROWS.forEach((row, r)=>{
+      const rowTotal = bets[r].reduce((a,b)=>a+b, 0);
+      weightedEdge += rowTotal * row.edge;
+    });
+    currentEdgeDisplay.textContent = total > 0 ? (weightedEdge/total).toFixed(1)+'%' : '--';
+  }
+
+  function onCellClick(e){
+    if(spinning) return;
+    const td = e.currentTarget;
+    const r = +td.dataset.row, c = +td.dataset.col;
+    if(ROWS[r].key === 'exact' && !exactTargets[c]) return flashCell(td);
+    if(betMode === 'add'){
+      if(bets[r][c] + selectedChip > maxBetPerSquare) return flashCell(td);
+      if(balance < selectedChip) return flashBalance();
+      balance -= selectedChip;
+      bets[r][c] += selectedChip;
+    } else {
+      if(bets[r][c] <= 0) return;
+      const removeAmt = Math.min(selectedChip, bets[r][c]);
+      bets[r][c] -= removeAmt;
+      balance += removeAmt;
+    }
+    updateBalance();
+    refreshGridDisplay();
+  }
+
+  clearBtn.addEventListener('click', ()=>{
+    if(spinning) return;
+    let refund = 0;
+    bets = bets.map(row=>row.map(v=>{ refund += v; return 0; }));
+    balance += refund;
+    chosenColors = [];
+    renderChosenColors();
+    updateBalance();
+    refreshGridDisplay();
+  });
+
+  clearBoardBtn.addEventListener('click', ()=>{
+    if(spinning) return;
+    document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('gold-win','green-outline'));
+    document.querySelectorAll('.reel-window').forEach(el=>el.classList.remove('bet-active','reel-win','reel-miss'));
+  });
+
+  rebetBtn.addEventListener('click', ()=>{
+    if(spinning || !lastBets) return;
+    const sum = lastBets.flat().reduce((a,b)=>a+b,0);
+    if(sum === 0) return;
+    if(balance < sum) return flashBalance();
+    balance -= sum;
+    for(let r=0;r<ROWS.length;r++){
+      for(let c=0;c<COLS;c++){
+        bets[r][c] += lastBets[r][c];
+      }
+    }
+    updateBalance();
+    refreshGridDisplay();
+  });
+
+  chipButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(spinning) return;
+      chipButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedChip = +btn.dataset.val;
+    });
+  });
+
+  modeAddBtn.addEventListener('click', ()=>{
+    betMode = 'add';
+    modeAddBtn.classList.add('active');
+    modeRemoveBtn.classList.remove('active');
+  });
+  modeRemoveBtn.addEventListener('click', ()=>{
+    betMode = 'remove';
+    modeRemoveBtn.classList.add('active');
+    modeAddBtn.classList.remove('active');
+  });
+
+  maxBetInput.addEventListener('change', ()=>{
+    let v = parseInt(maxBetInput.value, 10);
+    if(isNaN(v) || v < 5) v = 5;
+    maxBetPerSquare = v;
+    maxBetInput.value = v;
+  });
+
+  perfectBonusInput.addEventListener('change', ()=>{
+    let v = parseFloat(perfectBonusInput.value);
+    if(isNaN(v) || v < 1) v = 1;
+    perfectBoardBonus = v;
+    perfectBonusInput.value = v;
+  });
+
+  function updateBalance(){
+    balanceDisplay.textContent = '$'+balance;
+  }
+  function flashBalance(){
+    balanceDisplay.style.color = 'var(--loss)';
+    setTimeout(()=>{ balanceDisplay.style.color = 'var(--gold)'; }, 400);
+  }
+  function flashCell(td){
+    if(!td) return;
+    td.style.borderColor = 'var(--loss)';
+    setTimeout(()=>{ td.style.borderColor = ''; }, 400);
+  }
+
+  // ---------- spin ----------
+  spinBtn.addEventListener('click', spin);
+
+  function spin(){
+    const total = bets.flat().reduce((a,b)=>a+b,0);
+    if(total === 0 || spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    clearBtn.disabled = true;
+    rebetBtn.disabled = true;
+    clearBoardBtn.disabled = true;
+    document.querySelectorAll('.edge-input').forEach(el=>el.disabled = true);
+    document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = true);
+    placeColorBtn.disabled = true;
+    useLastColorBtn.disabled = true;
+    betGridTable.classList.add('grid-locked');
+    resultDisplay.innerHTML = `<div class="hex-result" style="color:var(--muted);">spinning\u2026</div>`;
+    document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('gold-win','green-outline'));
+
+    colorBanner.style.backgroundColor = '#000000';
+    colorHex.textContent = '#000000';
+    document.querySelectorAll('.col-digit').forEach(el=>{
+      el.textContent = '\u2013';
+      el.classList.remove('locked');
+      el.style.background = '';
+    });
+
+    // Bets are locked in the moment the spin starts, so snapshot and clear the live board now;
+    // each column's win/payout gets resolved progressively as its own reel lands below.
+    lastBets = bets.map(row=>row.slice());
+    lastExactTargets = exactTargets.slice();
+    bets = ROWS.map(()=>Array(COLS).fill(0));
+    chosenColors = [];
+    renderChosenColors();
+    refreshGridDisplay();
+
+    let totalWagered = 0;
+    let totalReturned = 0;
+    const winningRowIdx = [];
+
+    const digits = new Array(COLS).fill(null);
+    const lockedDigits = new Array(COLS).fill(null);
+    const baseDuration = 1400;
+    const stepDuration = 1000;
+    let maxDuration = 0;
+
+    for(let c=0;c<COLS;c++){
+      const colHasBetNow = ROWS.some((row, r) => lastBets[r][c] > 0);
+      setReelState(c, colHasBetNow ? 'bet-active' : null);
+    }
+
+    for(let c=0;c<COLS;c++){
+      const targetIdx = Math.floor(Math.random()*16);
+      const targetChar = HEX_CHARS[targetIdx];
+      digits[c] = targetChar;
+      const extraLoops = 4; // same spin speed for every reel, only the stop time differs
+      const P = extraLoops*16 + targetIdx;
+      const total = P + 2;
+      const chars = [];
+      for(let i=0;i<total;i++) chars.push(HEX_CHARS[i%16]);
+
+      const strip = reelStrips[c];
+      strip.style.transition = 'none';
+      strip.style.transform = 'translateY(0px)';
+      setStripChars(strip, chars);
+      void strip.offsetHeight; // force reflow
+
+      const duration = baseDuration + c*stepDuration;
+      maxDuration = Math.max(maxDuration, duration);
+      const finalY = -(P-1)*ITEM_H;
+
+      (function(strip, duration, finalY, c, targetChar){
+        requestAnimationFrame(()=>{
+          strip.style.transition = `transform ${duration}ms cubic-bezier(0.12,0.72,0.15,1)`;
+          strip.style.transform = `translateY(${finalY}px)`;
+        });
+        setTimeout(()=>{
+          lockedDigits[c] = targetChar;
+          const value = parseInt(targetChar, 16);
+          const cats = classify(value);
+          const colHasBet = ROWS.some((row, r) => lastBets[r][c] > 0);
+          const columnWon = ROWS.some((row, r) => {
+            if(lastBets[r][c] <= 0) return false;
+            if(row.key === 'exact') return lastExactTargets[c] === targetChar;
+            return cats.has(row.key);
+          });
+          setReelState(c, colHasBet ? (columnWon ? 'reel-win' : 'reel-miss') : null);
+          updateColorBanner(lockedDigits);
+          const headerDigit = document.getElementById('colDigit-'+c);
+          headerDigit.textContent = targetChar;
+          headerDigit.classList.add('locked');
+          headerDigit.style.background = `hsl(${value*22.5}, 70%, 50%)`;
+
+          // Resolve this column's payout and board highlight right now, as it lands.
+          ROWS.forEach((row, r)=>{
+            const amt = lastBets[r][c];
+            const isWinCat = row.key === 'exact'
+              ? targetChar === lastExactTargets[c]
+              : cats.has(row.key);
+            const td = gridBody.querySelector(`td.cell[data-row="${r}"][data-col="${c}"]`);
+            if(amt > 0) totalWagered += amt;
+            if(isWinCat){
+              if(amt > 0){
+                const payout = Math.round(amt * row.mult * 100)/100;
+                totalReturned += payout;
+                balance += payout;
+                td.classList.add('gold-win');
+                if(!winningRowIdx.includes(r)) winningRowIdx.push(r);
+              } else {
+                td.classList.add('green-outline');
+              }
+            }
+          });
+          updateBalance();
+        }, duration);
+      })(strip, duration, finalY, c, targetChar);
+    }
+
+    setTimeout(()=>finishRound(digits, totalWagered, totalReturned, winningRowIdx), maxDuration + 150);
+  }
+
+  function finishRound(digits, totalWagered, totalReturned, winningRowIdx){
+    const hexCode = digits.join('');
+    const swatch = '#'+hexCode;
+
+    // --- HEXTIC bonus: every one of the 6 Exact Hex columns was bet on and hit ---
+    let hexTicWin = false, hexticBonus = 0;
+    const exactRowIdx = ROWS.findIndex(row=>row.key==='exact');
+    if(exactRowIdx >= 0){
+      let exactWagerSum = 0;
+      let allSixHit = true;
+      for(let c=0;c<COLS;c++){
+        const amt = lastBets[exactRowIdx][c];
+        if(amt <= 0 || digits[c] !== lastExactTargets[c]){ allSixHit = false; }
+        else exactWagerSum += amt;
+      }
+      if(allSixHit && exactWagerSum > 0){
+        hexTicWin = true;
+        const hexticMult = Math.pow(16, 6); // fair odds of matching all 6 exactly: 16,777,216x
+        hexticBonus = exactWagerSum * hexticMult;
+      }
+    }
+
+    // --- Perfect Board bonus: every one of the round's 12 winning squares (excluding Exact Hex) was covered ---
+    let perfectBoardWin = true;
+    for(let c=0;c<COLS;c++){
+      const value = parseInt(digits[c], 16);
+      classify(value).forEach(key=>{
+        const rIdx = ROWS.findIndex(row=>row.key===key);
+        if(rIdx < 0 || lastBets[rIdx][c] <= 0) perfectBoardWin = false;
+      });
+    }
+    const perfectBoardExtra = perfectBoardWin ? totalReturned * (perfectBoardBonus - 1) : 0;
+
+    totalReturned += perfectBoardExtra + hexticBonus;
+    balance += perfectBoardExtra + hexticBonus;
+
+    const net = totalReturned - totalWagered;
+    const netStr = (net>=0 ? '+' : '\u2212') + '$' + Math.abs(net).toFixed(2);
+    const netClass = net >= 0 ? 'net-gain' : 'net-loss';
+
+    const winNames = winningRowIdx.map(r=>ROWS[r].name).join(', ') || 'none';
+    let bonusLines = '';
+    if(hexTicWin){
+      bonusLines += `<div class="bonus-line hextic-line">\ud83c\udf89 HEXTIC! All 6 Exact Hex picks matched \u2014 x${Math.pow(16,6).toLocaleString()} bonus (+$${hexticBonus.toFixed(2)})</div>`;
+    }
+    if(perfectBoardWin){
+      bonusLines += `<div class="bonus-line perfect-line">\u2b50 PERFECT BOARD! Every winning square was covered \u2014 x${perfectBoardBonus} bonus (+$${perfectBoardExtra.toFixed(2)})</div>`;
+    }
+
+    resultDisplay.innerHTML = `
+      <div class="hex-result" style="color:${swatch};">${swatch}</div>
+      <div class="cats">wins: ${winNames}</div>
+      <div class="net win">Won: $${totalReturned.toFixed(2)} <span class="${netClass}">(${netStr})</span></div>
+      ${bonusLines}
+    `;
+
+    spinCount++;
+    addHistory(swatch, spinCount);
+    addWheelToken(hexCode, spinCount);
+
+    lastDigits = digits.slice();
+    updateJackpotDisplay();
+
+    betGridTable.classList.remove('grid-locked');
+    document.querySelectorAll('.edge-input').forEach(el=>el.disabled = false);
+    document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = false);
+    placeColorBtn.disabled = !pickedHex;
+    useLastColorBtn.disabled = false;
+    spinning = false;
+    refreshGridDisplay();
+  }
+
+  function addHistory(swatch, num){
+    const chip = document.createElement('div');
+    chip.className = 'chip-hist';
+    chip.style.background = swatch;
+    chip.style.color = pickTextColor(swatch.replace('#',''));
+    chip.textContent = num;
+    chip.title = swatch + ' \u00b7 roll ' + num;
+    historyRow.insertBefore(chip, historyRow.firstChild);
+    while(historyRow.children.length > 12){
+      historyRow.removeChild(historyRow.lastChild);
+    }
+  }
+
+  // ---------- init ----------
+  buildReels();
+  buildGrid();
+  drawMiniWheel();
+  updateBalance();
+})();
+</script>
+</body>
+</html>
