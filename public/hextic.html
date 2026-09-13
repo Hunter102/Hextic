@@ -71,7 +71,18 @@
     background-clip:text;
     color:transparent;
   }
-  .tagline{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-top:2px;margin-left: 2px;}
+  .tagline{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-top:2px;}
+  .proto-label{font-size:10px;color:var(--muted);opacity:0.85;text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+
+  .site-footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-top:32px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+  }
 
   .balance-box{
     background:var(--panel);
@@ -82,6 +93,39 @@
   }
   .balance-box .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
   .balance-box .amount{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--gold);}
+
+  .main-layout{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+    align-items:stretch;
+  }
+  @media (min-width:900px), (orientation:landscape){
+    .main-layout{
+      display:grid;
+      grid-template-columns:440px 1fr;
+      grid-template-areas:
+        "slot board"
+        ".    actions";
+      gap:24px;
+    }
+    .main-layout .game-panel{
+      grid-area:slot;
+      align-self:center;
+      max-width:440px;
+      margin-bottom:0;
+      max-height:calc(100vh - 140px);
+      overflow-y:auto;
+    }
+    .main-layout .board-card{
+      grid-area:board;
+      min-width:0;
+    }
+    .main-layout .actions-card{
+      grid-area:actions;
+      min-width:0;
+    }
+  }
 
   .game-panel{
     background:var(--panel);
@@ -254,12 +298,12 @@
     font-weight:700;
     font-size:12px;
   }
-  .hextic-line{
+  .jackpot-hextic-line{
     background:linear-gradient(90deg, rgba(124,92,255,0.25), rgba(232,180,77,0.25));
     color:var(--gold);
     border:1px solid var(--row-exact);
   }
-  .perfect-line{
+  .hextic-line{
     background:rgba(78,209,140,0.15);
     color:var(--green);
     border:1px solid var(--green);
@@ -336,6 +380,13 @@
   }
 
   .table-panel{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    min-width:0;
+  }
+
+  .board-card, .actions-card{
     background:var(--panel);
     border:1px solid var(--border);
     border-radius:16px;
@@ -411,24 +462,6 @@
   .mode-btn.plus.active{background:var(--green); color:#0d1710;}
   .mode-btn.minus.active{background:var(--loss); color:#1a0d0f;}
   .mode-btn:hover:not(.active){color:var(--text);}
-
-  .maxbet-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  #maxBetInput{
-    width:84px;
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
-    font-family:'JetBrains Mono',monospace;
-    font-size:13px;
-    font-weight:600;
-    padding:7px 8px;
-    border-radius:8px;
-  }
-  #maxBetInput:focus{outline:none; border-color:var(--gold);}
 
   .color-bet-panel{
     background:var(--panel-2);
@@ -655,32 +688,6 @@
     opacity:0.6;
   }
 
-  .edge-control{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    margin-top:4px;
-  }
-  .edge-lbl{
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px;
-    color:var(--muted);
-    text-transform:uppercase;
-  }
-  .edge-input{
-    width:44px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    color:var(--text);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    font-weight:600;
-    padding:2px 4px;
-    border-radius:5px;
-  }
-  .edge-input:focus{outline:none; border-color:var(--gold);}
-  .edge-input:disabled{opacity:0.4;}
-
   .info-icon{
     position:relative;
     display:inline-flex;
@@ -827,15 +834,33 @@
   #rebetBtn:hover:not(:disabled){background:rgba(232,180,77,0.12);}
 
   .hint{font-size:11px;color:var(--muted); line-height:1.5;}
+
+  .bonus-info{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:12px 14px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+  }
+  .bonus-info-item{
+    font-size:11px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  .bi-hextic{color:var(--green);}
+  .bi-jackpot{color:var(--gold);}
 </style>
 </head>
 <body>
 <div class="app">
+
   <header>
     <div>
       <div class="logo"><span class="hex">HEX</span>TIC</div>
-      <!-- <div class="tagline">6 reels &middot; 1 color &middot; 36 bets</div> -->
-       <div class="tagline">Prototype</div>
+      <div class="tagline">6 reels &middot; 1 color &middot; 36 bets</div>
+      <div class="proto-label">Prototype &mdash; not a real-money product</div>
     </div>
     <div class="balance-box">
       <div class="label">Balance</div>
@@ -843,6 +868,7 @@
     </div>
   </header>
 
+  <div class="main-layout">
   <section class="game-panel">
     <div class="color-banner" id="colorBanner">
       <div class="color-hex" id="colorHex">#000000</div>
@@ -874,7 +900,7 @@
     </div>
   </section>
 
-  <section class="table-panel">
+  <section class="board-card">
     <div class="controls-row">
       <div class="chip-row">
         <span class="lbl">Chip</span>
@@ -890,14 +916,6 @@
           <button type="button" class="mode-btn plus active" id="modeAdd">+</button>
           <button type="button" class="mode-btn minus" id="modeRemove">&minus;</button>
         </div>
-      </div>
-      <div class="maxbet-row">
-        <span class="lbl">Max bet / square</span>
-        <input type="number" id="maxBetInput" value="250" min="5" step="5">
-      </div>
-      <div class="maxbet-row">
-        <span class="lbl">Perfect Board bonus</span>
-        <input type="number" id="perfectBonusInput" value="2" min="1" step="0.5">x
       </div>
     </div>
 
@@ -932,18 +950,20 @@
         <thead>
           <tr>
             <th></th>
-            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0"></div></th>
-            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1"></div></th>
-            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2"></div></th>
-            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3"></div></th>
-            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4"></div></th>
-            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5"></div></th>
+            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0">\u2013</div></th>
+            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1">\u2013</div></th>
+            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2">\u2013</div></th>
+            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3">\u2013</div></th>
+            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4">\u2013</div></th>
+            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5">\u2013</div></th>
           </tr>
         </thead>
         <tbody id="gridBody"></tbody>
       </table>
     </div>
+  </section>
 
+  <section class="actions-card">
     <div class="footer-row">
       <div class="total-bet">Total on table: <b id="totalBet">$0</b> &middot; Last bet: <b id="lastBetBottom">$0</b> &middot; Current edge on your bet: <b id="currentEdgeDisplay">--</b></div>
       <div class="btn-group">
@@ -952,9 +972,16 @@
         <button id="clearBoardBtn">Clear board</button>
       </div>
     </div>
-    <div class="hint">Pick a chip and a mode (<b>+</b> to add, <b>&minus;</b> to remove), then click a square &mdash; up to your max bet per square, min $5. Each row's payout is derived live from its true odds and an editable <b>Edge %</b> &mdash; change it and the payout updates instantly. "Current edge on your bet" shows the odds-weighted average across whatever you've actually staked. Each of the 6 reels above lands on its own hex digit for that column, building the final color live. Squares you actually won stay <span style="color:var(--gold);">gold</span>; every winning square (bet or not) gets a <span style="color:var(--green);">green outline</span> until the next spin.</div>
-    <span class="hint">©2026 NUTORIOUS LLC. All rights reserved.</span>
+    <div class="hint">Pick a chip and a mode (<b>+</b> to add, <b>&minus;</b> to remove), then click a square &mdash; up to the max bet per square, min $5. Each of the 6 reels above lands on its own hex digit for that column, building the final color live. Squares you actually won stay <span style="color:var(--gold);">gold</span>; every winning square (bet or not) gets a <span style="color:var(--green);">green outline</span> until the next spin.</div>
+
+    <div class="bonus-info" id="bonusInfo"></div>
   </section>
+  </div>
+
+  <footer class="site-footer">
+    &copy;2026 NUTORIOUS LLC. All rights reserved.<br>
+    Last updated 09/13/2026
+  </footer>
 </div>
 
 <script>
@@ -970,8 +997,8 @@
     {key:'even',       name:'EVEN',            prob:5/16,  edge:8,  color:'var(--row-even)',      desc:'Wins on 0, 2, 4, 6, 8 (numbers only)'},
     {key:'odd',        name:'ODD',             prob:5/16,  edge:8,  color:'var(--row-odd)',       desc:'Wins on 1, 3, 5, 7, 9 (numbers only)'},
     {key:'consonant',  name:'CONSONANT',       prob:4/16,  edge:12, color:'var(--row-consonant)', desc:'Wins on B, C, D, F'},
-    {key:'vowel',      name:'VOWEL',           prob:2/16,  edge:18, color:'var(--row-vowel)',     desc:'Wins on A or E'},
-    {key:'exact',      name:'EXACT HEX',     prob:1/16,  edge:20, color:'var(--row-exact)',     desc:'Wins only if the digit exactly matches the 0\u2013F value you pick for that column'},
+    {key:'vowel',      name:'VOWEL',           prob:2/16,  edge:15, color:'var(--row-vowel)',     desc:'Wins on A or E'},
+    {key:'exact',      name:'EXACT HEX',     prob:1/16,  edge:18, color:'var(--row-exact)',     desc:'Wins only if the digit exactly matches the 0\u2013F value you pick for that column'},
   ];
   ROWS.forEach(row=>{ row.mult = calcMult(row.prob, row.edge); });
   const COLS = 6;
@@ -983,6 +1010,7 @@
   let lastBets = null;
   let selectedChip = 5;
   let betMode = 'add'; // 'add' | 'remove'
+  // Tunable game constants — intentionally not exposed in the UI. Edit these values directly in code.
   let maxBetPerSquare = 250;
   let perfectBoardBonus = 2;
   let spinning = false;
@@ -1004,8 +1032,6 @@
   const rebetBtn = document.getElementById('rebetBtn');
   const chipButtons = document.querySelectorAll('.chip');
   const betGridTable = document.getElementById('betGrid');
-  const maxBetInput = document.getElementById('maxBetInput');
-  const perfectBonusInput = document.getElementById('perfectBonusInput');
   const modeAddBtn = document.getElementById('modeAdd');
   const modeRemoveBtn = document.getElementById('modeRemove');
   const reelsRow = document.getElementById('reelsRow');
@@ -1237,6 +1263,10 @@
     placeBetsForHex(hex);
   });
 
+  function fmtMoney(amt){
+    return (Math.floor(amt*100)/100).toFixed(2);
+  }
+
   function classify(value){
     const cats = new Set();
     if(value <= 9){
@@ -1308,23 +1338,9 @@
     let amt = parseFloat(jackpotAmtInput.value);
     if(isNaN(amt) || amt < 0) amt = 0;
     const val = computeJackpotPotential(amt);
-    jackpotValueEl.textContent = val === null ? '--' : '$'+val.toFixed(2);
+    jackpotValueEl.textContent = val === null ? '--' : '$'+fmtMoney(val);
   }
   jackpotAmtInput.addEventListener('input', updateJackpotDisplay);
-
-  function onEdgeChange(r, input){
-    let v = parseFloat(input.value);
-    if(isNaN(v)) v = ROWS[r].edge;
-    v = Math.max(0, Math.min(95, v));
-    input.value = v;
-    const row = ROWS[r];
-    row.edge = v;
-    row.mult = calcMult(row.prob, v);
-    document.getElementById('mult-'+r).textContent = `${row.mult}x payout \u00b7 ${row.edge}% edge`;
-    document.getElementById('tooltip-'+r).textContent = tooltipText(row);
-    refreshGridDisplay();
-    updateJackpotDisplay();
-  }
 
   // ---------- grid ----------
   function buildGrid(){
@@ -1348,14 +1364,8 @@
       labelTd.innerHTML = `
         <div class="cat-name">${row.name}<span class="info-icon" tabindex="0">?<span class="tooltip" id="tooltip-${r}">${tooltipText(row)}</span></span></div>
         <div class="cat-mult" id="mult-${r}">${row.mult}x payout &middot; ${row.edge}% edge</div>
-        <div class="edge-control">
-          <span class="edge-lbl">Edge</span>
-          <input type="number" class="edge-input" id="edgeInput-${r}" value="${row.edge}" min="0" max="95" step="1">
-          <span class="edge-lbl">%</span>
-        </div>
       `;
       tr.appendChild(labelTd);
-      labelTd.querySelector('.edge-input').addEventListener('change', (e)=>onEdgeChange(r, e.target));
 
       for(let c=0;c<COLS;c++){
         const td = document.createElement('td');
@@ -1390,10 +1400,10 @@
       const amt = bets[r][c];
       const span = td.querySelector('.bet-amt');
       if(amt > 0){
-        span.textContent = '$'+amt;
+        span.textContent = '$'+fmtMoney(amt);
         span.className = 'bet-amt';
       } else if(lastBets && lastBets[r][c] > 0){
-        span.textContent = '$'+lastBets[r][c];
+        span.textContent = '$'+fmtMoney(lastBets[r][c]);
         span.className = 'bet-amt ghost';
       } else {
         span.textContent = '';
@@ -1401,15 +1411,15 @@
       }
     });
     const total = bets.flat().reduce((a,b)=>a+b,0);
-    totalBetDisplay.textContent = '$'+total;
-    totalBetTop.textContent = '$'+total;
+    totalBetDisplay.textContent = '$'+fmtMoney(total);
+    totalBetTop.textContent = '$'+fmtMoney(total);
     spinBtn.disabled = spinning || total === 0;
     clearBtn.disabled = spinning || total === 0;
     clearBoardBtn.disabled = spinning;
     const lastSum = lastBets ? lastBets.flat().reduce((a,b)=>a+b,0) : 0;
     rebetBtn.disabled = spinning || lastSum === 0;
-    lastBetTop.textContent = '$'+lastSum;
-    lastBetBottom.textContent = '$'+lastSum;
+    lastBetTop.textContent = '$'+fmtMoney(lastSum);
+    lastBetBottom.textContent = '$'+fmtMoney(lastSum);
 
     let weightedEdge = 0;
     ROWS.forEach((row, r)=>{
@@ -1452,8 +1462,18 @@
 
   clearBoardBtn.addEventListener('click', ()=>{
     if(spinning) return;
+    let refund = 0;
+    bets = bets.map(row=>row.map(v=>{ refund += v; return 0; }));
+    balance += refund;
+    lastBets = null;
+    chosenColors = [];
+    renderChosenColors();
+    exactTargets = Array(COLS).fill('');
+    document.querySelectorAll('.exact-digit-select').forEach(sel=>{ sel.value = ''; });
     document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('gold-win','green-outline'));
     document.querySelectorAll('.reel-window').forEach(el=>el.classList.remove('bet-active','reel-win','reel-miss'));
+    updateBalance();
+    refreshGridDisplay();
   });
 
   rebetBtn.addEventListener('click', ()=>{
@@ -1491,22 +1511,8 @@
     modeAddBtn.classList.remove('active');
   });
 
-  maxBetInput.addEventListener('change', ()=>{
-    let v = parseInt(maxBetInput.value, 10);
-    if(isNaN(v) || v < 5) v = 5;
-    maxBetPerSquare = v;
-    maxBetInput.value = v;
-  });
-
-  perfectBonusInput.addEventListener('change', ()=>{
-    let v = parseFloat(perfectBonusInput.value);
-    if(isNaN(v) || v < 1) v = 1;
-    perfectBoardBonus = v;
-    perfectBonusInput.value = v;
-  });
-
   function updateBalance(){
-    balanceDisplay.textContent = '$'+balance;
+    balanceDisplay.textContent = '$'+fmtMoney(balance);
   }
   function flashBalance(){
     balanceDisplay.style.color = 'var(--loss)';
@@ -1529,7 +1535,6 @@
     clearBtn.disabled = true;
     rebetBtn.disabled = true;
     clearBoardBtn.disabled = true;
-    document.querySelectorAll('.edge-input').forEach(el=>el.disabled = true);
     document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = true);
     placeColorBtn.disabled = true;
     useLastColorBtn.disabled = true;
@@ -1676,22 +1681,22 @@
     balance += perfectBoardExtra + hexticBonus;
 
     const net = totalReturned - totalWagered;
-    const netStr = (net>=0 ? '+' : '\u2212') + '$' + Math.abs(net).toFixed(2);
+    const netStr = (net>=0 ? '+' : '\u2212') + '$' + fmtMoney(Math.abs(net));
     const netClass = net >= 0 ? 'net-gain' : 'net-loss';
 
     const winNames = winningRowIdx.map(r=>ROWS[r].name).join(', ') || 'none';
     let bonusLines = '';
     if(hexTicWin){
-      bonusLines += `<div class="bonus-line hextic-line">\ud83c\udf89 HEXTIC! All 6 Exact Hex picks matched \u2014 x${Math.pow(16,6).toLocaleString()} bonus (+$${hexticBonus.toFixed(2)})</div>`;
+      bonusLines += `<div class="bonus-line jackpot-hextic-line">\ud83c\udf89 JACKPOT HEXTIC! All 6 Exact Hex picks matched \u2014 x${Math.pow(16,6).toLocaleString()} bonus (+$${fmtMoney(hexticBonus)})</div>`;
     }
     if(perfectBoardWin){
-      bonusLines += `<div class="bonus-line perfect-line">\u2b50 PERFECT BOARD! Every winning square was covered \u2014 x${perfectBoardBonus} bonus (+$${perfectBoardExtra.toFixed(2)})</div>`;
+      bonusLines += `<div class="bonus-line hextic-line">\u2b50 HEXTIC! Every winning square was covered \u2014 x${perfectBoardBonus} bonus (+$${fmtMoney(perfectBoardExtra)})</div>`;
     }
 
     resultDisplay.innerHTML = `
       <div class="hex-result" style="color:${swatch};">${swatch}</div>
       <div class="cats">wins: ${winNames}</div>
-      <div class="net win">Won: $${totalReturned.toFixed(2)} <span class="${netClass}">(${netStr})</span></div>
+      <div class="net win">Won: $${fmtMoney(totalReturned)} <span class="${netClass}">(${netStr})</span></div>
       ${bonusLines}
     `;
 
@@ -1703,7 +1708,6 @@
     updateJackpotDisplay();
 
     betGridTable.classList.remove('grid-locked');
-    document.querySelectorAll('.edge-input').forEach(el=>el.disabled = false);
     document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = false);
     placeColorBtn.disabled = !pickedHex;
     useLastColorBtn.disabled = false;
