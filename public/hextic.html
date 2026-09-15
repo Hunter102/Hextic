@@ -1002,6 +1002,7 @@
   let balance = 1000;
   let bets = ROWS.map(()=>Array(COLS).fill(0));
   let lastBets = null;
+  let lastRoundBets = null; // survives Clear Board / Clear All Bets, only updates on an actual spin
   let selectedChip = 5;
   let betMode = 'add'; // 'add' | 'remove'
   // Tunable game constants — intentionally not exposed in the UI. Edit these values directly in code.
@@ -1419,7 +1420,7 @@
     spinBtn.disabled = spinning || total === 0;
     clearBtn.disabled = spinning || total === 0;
     clearBoardBtn.disabled = spinning;
-    const lastSum = lastBets ? lastBets.flat().reduce((a,b)=>a+b,0) : 0;
+    const lastSum = lastRoundBets ? lastRoundBets.flat().reduce((a,b)=>a+b,0) : 0;
     rebetBtn.disabled = spinning || lastSum === 0;
     lastBetTop.textContent = '$'+lastSum;
     lastBetBottom.textContent = '$'+lastSum;
@@ -1482,14 +1483,14 @@
   });
 
   rebetBtn.addEventListener('click', ()=>{
-    if(spinning || !lastBets) return;
-    const sum = lastBets.flat().reduce((a,b)=>a+b,0);
+    if(spinning || !lastRoundBets) return;
+    const sum = lastRoundBets.flat().reduce((a,b)=>a+b,0);
     if(sum === 0) return;
     if(balance < sum) return flashBalance();
     balance -= sum;
     for(let r=0;r<ROWS.length;r++){
       for(let c=0;c<COLS;c++){
-        bets[r][c] += lastBets[r][c];
+        bets[r][c] += lastRoundBets[r][c];
       }
     }
     updateBalance();
@@ -1652,6 +1653,8 @@
   function finishRound(digits, totalWagered, totalReturned, winningRowIdx){
     const hexCode = digits.join('');
     const swatch = '#'+hexCode;
+
+    lastRoundBets = lastBets.map(row=>row.slice());
 
     // --- HEXTIC bonus: every one of the 6 Exact Hex columns was bet on and hit ---
     let hexTicWin = false, hexticBonus = 0;
