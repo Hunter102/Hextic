@@ -104,25 +104,24 @@
     .main-layout{
       display:grid;
       grid-template-columns:440px 1fr;
+      grid-template-rows:1fr auto;
       grid-template-areas:
         "slot board"
-        ".    actions";
+        "desc board";
       gap:24px;
     }
     .main-layout .game-panel{
       grid-area:slot;
-      align-self:center;
       max-width:440px;
       margin-bottom:0;
-      max-height:calc(100vh - 140px);
-      overflow-y:auto;
+    }
+    .main-layout .description-card{
+      grid-area:desc;
+      max-width:440px;
+      margin-bottom:0;
     }
     .main-layout .board-card{
       grid-area:board;
-      min-width:0;
-    }
-    .main-layout .actions-card{
-      grid-area:actions;
       min-width:0;
     }
   }
@@ -166,14 +165,13 @@
 
   .reels-row{
     display:flex;
-    gap:10px;
-    overflow-x:auto;
-    max-width:100%;
+    gap:6px;
+    width:100%;
     padding:2px;
   }
   .reel{
-    width:56px;
-    flex-shrink:0;
+    flex:1 1 0;
+    min-width:0;
     text-align:center;
   }
   .reel-num{
@@ -379,14 +377,7 @@
     font-weight:700;
   }
 
-  .table-panel{
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-    min-width:0;
-  }
-
-  .board-card, .actions-card{
+  .board-card, .description-card{
     background:var(--panel);
     border:1px solid var(--border);
     border-radius:16px;
@@ -623,15 +614,14 @@
   }
 
   .table-scroll{
-    overflow-x:auto;
-    padding-bottom:4px;
+    width:100%;
   }
 
   table.bet-grid{
+    table-layout:fixed;
     border-collapse:separate;
     border-spacing:6px;
     width:100%;
-    min-width:620px;
   }
   table.bet-grid th{
     font-family:'JetBrains Mono',monospace;
@@ -661,9 +651,9 @@
   }
   .row-label-cell{
     text-align:left;
-    padding-right:10px;
-    white-space:nowrap;
-    min-width:158px;
+    padding-right:8px;
+    white-space:normal;
+    overflow-wrap:break-word;
   }
   .row-label-cell .cat-name{
     font-family:'Space Grotesk',sans-serif;
@@ -740,12 +730,12 @@
     border:1px solid var(--border);
     border-radius:8px;
     height:60px;
-    width:16.6%;
-    padding:5px 6px;
+    padding:5px 3px;
     text-align:center;
     vertical-align:middle;
     cursor:pointer;
     position:relative;
+    overflow:hidden;
     transition:background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
     user-select:none;
   }
@@ -947,23 +937,25 @@
 
     <div class="table-scroll">
       <table class="bet-grid" id="betGrid">
+        <colgroup>
+          <col style="width:20%;">
+          <col><col><col><col><col><col>
+        </colgroup>
         <thead>
           <tr>
             <th></th>
-            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0">\u2013</div></th>
-            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1">\u2013</div></th>
-            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2">\u2013</div></th>
-            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3">\u2013</div></th>
-            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4">\u2013</div></th>
-            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5">\u2013</div></th>
+            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0">–</div></th>
+            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1">–</div></th>
+            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2">–</div></th>
+            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3">–</div></th>
+            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4">–</div></th>
+            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5">–</div></th>
           </tr>
         </thead>
         <tbody id="gridBody"></tbody>
       </table>
     </div>
-  </section>
 
-  <section class="actions-card">
     <div class="footer-row">
       <div class="total-bet">Total on table: <b id="totalBet">$0</b> &middot; Last bet: <b id="lastBetBottom">$0</b> &middot; Current edge on your bet: <b id="currentEdgeDisplay">--</b></div>
       <div class="btn-group">
@@ -973,7 +965,9 @@
       </div>
     </div>
     <div class="hint">Pick a chip and a mode (<b>+</b> to add, <b>&minus;</b> to remove), then click a square &mdash; up to the max bet per square, min $5. Each of the 6 reels above lands on its own hex digit for that column, building the final color live. Squares you actually won stay <span style="color:var(--gold);">gold</span>; every winning square (bet or not) gets a <span style="color:var(--green);">green outline</span> until the next spin.</div>
+  </section>
 
+  <section class="description-card">
     <div class="bonus-info" id="bonusInfo"></div>
   </section>
   </div>
@@ -1022,6 +1016,7 @@
   const spinBtn = document.getElementById('spinBtn');
   const resultDisplay = document.getElementById('resultDisplay');
   const historyRow = document.getElementById('historyRow');
+  const bonusInfoEl = document.getElementById('bonusInfo');
   const gridBody = document.getElementById('gridBody');
   const totalBetDisplay = document.getElementById('totalBet');
   const totalBetTop = document.getElementById('totalBetTop');
@@ -1267,6 +1262,14 @@
     return (Math.floor(amt*100)/100).toFixed(2);
   }
 
+  function renderBonusInfo(){
+    const hexticMult = Math.pow(16,6).toLocaleString();
+    bonusInfoEl.innerHTML = `
+      <div class="bonus-info-item"><b class="bi-hextic">HEXTIC (x${perfectBoardBonus})</b> &mdash; bet on every one of the round's 12 winning squares (the two winning rows per column, across the six standard rows above the divider) and hit every single one, and your total winnings get a x${perfectBoardBonus} bonus.</div>
+      <div class="bonus-info-item"><b class="bi-jackpot">JACKPOT HEXTIC (x${hexticMult})</b> &mdash; bet on all 6 Exact Hex columns and match every one exactly, and you win a bonus equal to the true odds of that happening: 16<sup>6</sup> = ${hexticMult}x your combined Exact Hex stake.</div>
+    `;
+  }
+
   function classify(value){
     const cats = new Set();
     if(value <= 9){
@@ -1400,10 +1403,10 @@
       const amt = bets[r][c];
       const span = td.querySelector('.bet-amt');
       if(amt > 0){
-        span.textContent = '$'+fmtMoney(amt);
+        span.textContent = '$'+amt;
         span.className = 'bet-amt';
       } else if(lastBets && lastBets[r][c] > 0){
-        span.textContent = '$'+fmtMoney(lastBets[r][c]);
+        span.textContent = '$'+lastBets[r][c];
         span.className = 'bet-amt ghost';
       } else {
         span.textContent = '';
@@ -1411,15 +1414,15 @@
       }
     });
     const total = bets.flat().reduce((a,b)=>a+b,0);
-    totalBetDisplay.textContent = '$'+fmtMoney(total);
-    totalBetTop.textContent = '$'+fmtMoney(total);
+    totalBetDisplay.textContent = '$'+total;
+    totalBetTop.textContent = '$'+total;
     spinBtn.disabled = spinning || total === 0;
     clearBtn.disabled = spinning || total === 0;
     clearBoardBtn.disabled = spinning;
     const lastSum = lastBets ? lastBets.flat().reduce((a,b)=>a+b,0) : 0;
     rebetBtn.disabled = spinning || lastSum === 0;
-    lastBetTop.textContent = '$'+fmtMoney(lastSum);
-    lastBetBottom.textContent = '$'+fmtMoney(lastSum);
+    lastBetTop.textContent = '$'+lastSum;
+    lastBetBottom.textContent = '$'+lastSum;
 
     let weightedEdge = 0;
     ROWS.forEach((row, r)=>{
@@ -1456,6 +1459,8 @@
     balance += refund;
     chosenColors = [];
     renderChosenColors();
+    exactTargets = Array(COLS).fill('');
+    document.querySelectorAll('.exact-digit-select').forEach(sel=>{ sel.value = ''; });
     updateBalance();
     refreshGridDisplay();
   });
@@ -1687,10 +1692,10 @@
     const winNames = winningRowIdx.map(r=>ROWS[r].name).join(', ') || 'none';
     let bonusLines = '';
     if(hexTicWin){
-      bonusLines += `<div class="bonus-line jackpot-hextic-line">\ud83c\udf89 JACKPOT HEXTIC! All 6 Exact Hex picks matched \u2014 x${Math.pow(16,6).toLocaleString()} bonus (+$${fmtMoney(hexticBonus)})</div>`;
+      bonusLines += `<div class="bonus-line jackpot-hextic-line">\ud83c\udf89 JACKPOT HEXTIC (x${Math.pow(16,6).toLocaleString()})! All 6 Exact Hex picks matched \u2014 +$${fmtMoney(hexticBonus)}</div>`;
     }
     if(perfectBoardWin){
-      bonusLines += `<div class="bonus-line hextic-line">\u2b50 HEXTIC! Every winning square was covered \u2014 x${perfectBoardBonus} bonus (+$${fmtMoney(perfectBoardExtra)})</div>`;
+      bonusLines += `<div class="bonus-line hextic-line">\u2b50 HEXTIC (x${perfectBoardBonus})! Every winning square was covered \u2014 +$${fmtMoney(perfectBoardExtra)}</div>`;
     }
 
     resultDisplay.innerHTML = `
@@ -1731,6 +1736,7 @@
   // ---------- init ----------
   buildReels();
   buildGrid();
+  renderBonusInfo();
   drawMiniWheel();
   updateBalance();
 })();
