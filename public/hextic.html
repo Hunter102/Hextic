@@ -613,24 +613,25 @@
     box-shadow:0 0 3px rgba(0,0,0,0.5);
   }
 
-  .table-scroll{
+  .bet-board{
+    display:grid;
+    grid-template-columns:minmax(88px,22%) repeat(6, 1fr);
+    gap:6px;
     width:100%;
   }
 
-  table.bet-grid{
-    table-layout:fixed;
-    border-collapse:separate;
-    border-spacing:6px;
-    width:100%;
+  .board-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
   }
-  table.bet-grid th{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
+
+  .col-head{
     color:var(--muted);
-    font-weight:600;
     padding-bottom:4px;
   }
-  .col-head{padding:0 0 6px;}
   .col-num{font-size:12px; color:var(--muted); margin-bottom:4px;}
   .col-digit{
     display:inline-block;
@@ -649,11 +650,15 @@
     color:#0d0d0d;
     border:1px solid rgba(255,255,255,0.3);
   }
+
   .row-label-cell{
+    align-items:flex-start;
+    justify-content:center;
     text-align:left;
-    padding-right:8px;
-    white-space:normal;
-    overflow-wrap:break-word;
+    align-self:stretch;
+    border-left:4px solid;
+    border-radius:4px;
+    padding:6px 8px 6px 10px;
   }
   .row-label-cell .cat-name{
     font-family:'Space Grotesk',sans-serif;
@@ -662,20 +667,22 @@
     display:flex;
     align-items:center;
     gap:6px;
+    flex-wrap:wrap;
   }
   .row-label-cell .cat-mult{
     font-family:'JetBrains Mono',monospace;
     font-size:11px;
     color:var(--muted);
+    margin-top:2px;
   }
-  .row-label-cell{border-left:4px solid; border-radius:4px; padding:6px 0 6px 10px;}
 
-  .row-divider td{padding:2px 0;}
   .row-divider-line{
+    grid-column:1 / -1;
     height:2px;
     width:100%;
     background:linear-gradient(90deg, transparent, var(--row-exact), transparent);
     opacity:0.6;
+    margin:2px 0;
   }
 
   .info-icon{
@@ -725,28 +732,27 @@
     opacity:1;
   }
 
-  td.cell{
+  .board-cell.square{
+    aspect-ratio:1 / 1;
+    align-self:start;
+    width:100%;
     background:var(--panel-2);
     border:1px solid var(--border);
     border-radius:8px;
-    height:60px;
-    padding:5px 3px;
-    text-align:center;
-    vertical-align:middle;
+    padding:4px 3px;
     cursor:pointer;
-    position:relative;
     overflow:hidden;
     transition:background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
     user-select:none;
   }
-  td.cell:hover{border-color:var(--gold); transform:translateY(-1px);}
-  td.cell .bet-amt{
+  .board-cell.square:hover{border-color:var(--gold); transform:translateY(-1px);}
+  .board-cell.square .bet-amt{
     font-family:'JetBrains Mono',monospace;
     font-weight:700;
     font-size:14px;
     color:var(--gold);
   }
-  td.cell .bet-amt.ghost{
+  .board-cell.square .bet-amt.ghost{
     color:var(--muted);
     font-style:italic;
     font-weight:600;
@@ -770,13 +776,13 @@
   }
   .exact-digit-select:focus{outline:none; border-color:var(--row-exact);}
   .exact-digit-select:disabled{opacity:0.4; cursor:not-allowed;}
-  td.cell.gold-win{
+  .board-cell.square.gold-win{
     background:radial-gradient(circle, rgba(232,180,77,0.4), var(--panel-2));
     border-color:var(--green);
     box-shadow:0 0 14px var(--win-glow);
     animation:pulseWin 0.9s ease;
   }
-  td.cell.green-outline{
+  .board-cell.square.green-outline{
     outline:2px solid var(--green);
     outline-offset:-2px;
     border-color:var(--green);
@@ -841,6 +847,24 @@
   }
   .bi-hextic{color:var(--green);}
   .bi-jackpot{color:var(--gold);}
+  @media (max-width:480px){
+    body{padding:16px 10px 40px;}
+    .board-card, .description-card{padding:14px;}
+    .chip{width:38px;height:38px;font-size:11px;}
+    .mode-btn{width:30px;height:28px;font-size:13px;}
+    .color-bet-row{justify-content:center;}
+    .color-bet-info{min-width:0;flex:1 1 160px;}
+    table.bet-grid{border-spacing:3px;}
+    .row-label-cell{padding:5px 4px 5px 6px;}
+    .row-label-cell .cat-name{font-size:11px;gap:4px;}
+    .row-label-cell .cat-mult{font-size:9px;}
+    .info-icon{width:12px;height:12px;font-size:8px;}
+    .board-cell.square{padding:3px 2px;}
+    .board-cell.square .bet-amt{font-size:11px;}
+    .exact-digit-select{font-size:11px;padding:1px 0;}
+    .col-num{font-size:10px;}
+    .col-digit{font-size:11px;padding:2px 4px;}
+  }
 </style>
 </head>
 <body>
@@ -935,26 +959,7 @@
       </div>
     </div>
 
-    <div class="table-scroll">
-      <table class="bet-grid" id="betGrid">
-        <colgroup>
-          <col style="width:20%;">
-          <col><col><col><col><col><col>
-        </colgroup>
-        <thead>
-          <tr>
-            <th></th>
-            <th class="col-head"><div class="col-num">1</div><div class="col-digit" id="colDigit-0">–</div></th>
-            <th class="col-head"><div class="col-num">2</div><div class="col-digit" id="colDigit-1">–</div></th>
-            <th class="col-head"><div class="col-num">3</div><div class="col-digit" id="colDigit-2">–</div></th>
-            <th class="col-head"><div class="col-num">4</div><div class="col-digit" id="colDigit-3">–</div></th>
-            <th class="col-head"><div class="col-num">5</div><div class="col-digit" id="colDigit-4">–</div></th>
-            <th class="col-head"><div class="col-num">6</div><div class="col-digit" id="colDigit-5">–</div></th>
-          </tr>
-        </thead>
-        <tbody id="gridBody"></tbody>
-      </table>
-    </div>
+    <div class="bet-board" id="betGrid"></div>
 
     <div class="footer-row">
       <div class="total-bet">Total on table: <b id="totalBet">$0</b> &middot; Last bet: <b id="lastBetBottom">$0</b> &middot; Current edge on your bet: <b id="currentEdgeDisplay">--</b></div>
@@ -1018,7 +1023,7 @@
   const resultDisplay = document.getElementById('resultDisplay');
   const historyRow = document.getElementById('historyRow');
   const bonusInfoEl = document.getElementById('bonusInfo');
-  const gridBody = document.getElementById('gridBody');
+  const gridBody = document.getElementById('betGrid');
   const totalBetDisplay = document.getElementById('totalBet');
   const totalBetTop = document.getElementById('totalBetTop');
   const lastBetTop = document.getElementById('lastBetTop');
@@ -1350,56 +1355,61 @@
   function buildGrid(){
     gridBody.innerHTML = '';
 
+    // header row: blank corner + 6 column-digit heads
+    const corner = document.createElement('div');
+    corner.className = 'board-cell header-corner';
+    gridBody.appendChild(corner);
+    for(let c=0;c<COLS;c++){
+      const head = document.createElement('div');
+      head.className = 'board-cell col-head';
+      head.innerHTML = `<div class="col-num">${c+1}</div><div class="col-digit" id="colDigit-${c}">\u2013</div>`;
+      gridBody.appendChild(head);
+    }
+
     ROWS.forEach((row, r)=>{
       if(row.key === 'exact'){
-        const dividerTr = document.createElement('tr');
-        dividerTr.className = 'row-divider';
-        const dividerTd = document.createElement('td');
-        dividerTd.colSpan = COLS + 1;
-        dividerTd.innerHTML = `<div class="row-divider-line"></div>`;
-        dividerTr.appendChild(dividerTd);
-        gridBody.appendChild(dividerTr);
+        const divider = document.createElement('div');
+        divider.className = 'row-divider-line';
+        gridBody.appendChild(divider);
       }
 
-      const tr = document.createElement('tr');
-      const labelTd = document.createElement('td');
-      labelTd.className = 'row-label-cell';
-      labelTd.style.borderLeftColor = row.color;
-      labelTd.innerHTML = `
+      const label = document.createElement('div');
+      label.className = 'board-cell row-label-cell';
+      label.style.borderLeftColor = row.color;
+      label.innerHTML = `
         <div class="cat-name">${row.name}<span class="info-icon" tabindex="0">?<span class="tooltip" id="tooltip-${r}">${tooltipText(row)}</span></span></div>
-        <div class="cat-mult" id="mult-${r}">${row.mult}x payout &middot; ${row.edge}% edge</div>
+        <div class="cat-mult" id="mult-${r}">${row.mult}x &middot; ${row.edge}% edge</div>
       `;
-      tr.appendChild(labelTd);
+      gridBody.appendChild(label);
 
       for(let c=0;c<COLS;c++){
-        const td = document.createElement('td');
-        td.className = 'cell';
-        td.dataset.row = r;
-        td.dataset.col = c;
+        const cell = document.createElement('div');
+        cell.className = 'board-cell square';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
         if(row.key === 'exact'){
           const dashOption = `<option value=""${exactTargets[c]===''?' selected':''}>\u2013</option>`;
           const options = dashOption + HEX_CHARS.split('').map(ch=>`<option value="${ch}"${ch===exactTargets[c]?' selected':''}>${ch}</option>`).join('');
-          td.innerHTML = `<select class="exact-digit-select" data-col="${c}">${options}</select><span class="bet-amt"></span>`;
-          const sel = td.querySelector('.exact-digit-select');
+          cell.innerHTML = `<select class="exact-digit-select" data-col="${c}">${options}</select><span class="bet-amt"></span>`;
+          const sel = cell.querySelector('.exact-digit-select');
           sel.addEventListener('click', e=>e.stopPropagation());
           sel.addEventListener('change', e=>{
             e.stopPropagation();
             exactTargets[c] = e.target.value;
           });
         } else {
-          td.innerHTML = `<span class="bet-amt"></span>`;
+          cell.innerHTML = `<span class="bet-amt"></span>`;
         }
-        td.addEventListener('click', onCellClick);
-        tr.appendChild(td);
+        cell.addEventListener('click', onCellClick);
+        gridBody.appendChild(cell);
       }
-      gridBody.appendChild(tr);
     });
 
     refreshGridDisplay();
   }
 
   function refreshGridDisplay(){
-    document.querySelectorAll('td.cell').forEach(td=>{
+    document.querySelectorAll('.board-cell.square').forEach(td=>{
       const r = +td.dataset.row, c = +td.dataset.col;
       const amt = bets[r][c];
       const span = td.querySelector('.bet-amt');
@@ -1476,7 +1486,7 @@
     renderChosenColors();
     exactTargets = Array(COLS).fill('');
     document.querySelectorAll('.exact-digit-select').forEach(sel=>{ sel.value = ''; });
-    document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('gold-win','green-outline'));
+    document.querySelectorAll('.board-cell.square').forEach(td=>td.classList.remove('gold-win','green-outline'));
     document.querySelectorAll('.reel-window').forEach(el=>el.classList.remove('bet-active','reel-win','reel-miss'));
     updateBalance();
     refreshGridDisplay();
@@ -1546,7 +1556,7 @@
     useLastColorBtn.disabled = true;
     betGridTable.classList.add('grid-locked');
     resultDisplay.innerHTML = `<div class="hex-result" style="color:var(--muted);">spinning\u2026</div>`;
-    document.querySelectorAll('td.cell').forEach(td=>td.classList.remove('gold-win','green-outline'));
+    document.querySelectorAll('.board-cell.square').forEach(td=>td.classList.remove('gold-win','green-outline'));
 
     colorBanner.style.backgroundColor = '#000000';
     colorHex.textContent = '#000000';
@@ -1628,7 +1638,7 @@
             const isWinCat = row.key === 'exact'
               ? targetChar === lastExactTargets[c]
               : cats.has(row.key);
-            const td = gridBody.querySelector(`td.cell[data-row="${r}"][data-col="${c}"]`);
+            const td = gridBody.querySelector(`.board-cell.square[data-row="${r}"][data-col="${c}"]`);
             if(amt > 0) totalWagered += amt;
             if(isWinCat){
               if(amt > 0){
