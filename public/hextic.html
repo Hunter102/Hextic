@@ -29,7 +29,7 @@
   }
 
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%;}
   body{
     background:
       radial-gradient(circle at 15% -10%, #1a2030 0%, transparent 45%),
@@ -100,29 +100,32 @@
     gap:24px;
     align-items:stretch;
   }
-  @media (min-width:900px), (orientation:landscape){
+  @media (min-width:640px){
     .main-layout{
       display:grid;
-      grid-template-columns:440px 1fr;
+      grid-template-columns:300px 1fr;
       grid-template-rows:1fr auto;
       grid-template-areas:
         "slot board"
         "desc board";
-      gap:24px;
+      gap:20px;
     }
     .main-layout .game-panel{
       grid-area:slot;
-      max-width:440px;
       margin-bottom:0;
     }
     .main-layout .description-card{
       grid-area:desc;
-      max-width:440px;
       margin-bottom:0;
     }
     .main-layout .board-card{
       grid-area:board;
       min-width:0;
+    }
+  }
+  @media (min-width:900px){
+    .main-layout{
+      grid-template-columns:440px 1fr;
     }
   }
 
@@ -615,8 +618,8 @@
 
   .bet-board{
     display:grid;
-    grid-template-columns:minmax(88px,22%) repeat(6, 1fr);
-    gap:6px;
+    grid-template-columns:minmax(60px,120px) repeat(6, minmax(0, 1fr));
+    gap:5px;
     width:100%;
   }
 
@@ -626,6 +629,7 @@
     align-items:center;
     justify-content:center;
     position:relative;
+    min-width:0;
   }
 
   .col-head{
@@ -685,6 +689,20 @@
     margin:2px 0;
   }
 
+  .picker-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--row-exact);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    align-items:flex-start;
+    justify-content:center;
+    padding-left:2px;
+  }
+  .picker-cell{
+    padding:0;
+  }
+
   .info-icon{
     position:relative;
     display:inline-flex;
@@ -733,13 +751,13 @@
   }
 
   .board-cell.square{
+    width:100%;
     aspect-ratio:1 / 1;
     align-self:start;
-    width:100%;
     background:var(--panel-2);
     border:1px solid var(--border);
     border-radius:8px;
-    padding:4px 3px;
+    padding:2px 1px;
     cursor:pointer;
     overflow:hidden;
     transition:background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
@@ -761,7 +779,8 @@
   .exact-digit-select{
     display:block;
     width:100%;
-    margin-bottom:4px;
+    min-width:0;
+    box-sizing:border-box;
     background:var(--panel);
     border:1px solid var(--border);
     color:var(--row-exact);
@@ -771,7 +790,7 @@
     text-align:center;
     text-align-last:center;
     border-radius:6px;
-    padding:2px 0;
+    padding:4px 0;
     cursor:pointer;
   }
   .exact-digit-select:focus{outline:none; border-color:var(--row-exact);}
@@ -847,6 +866,7 @@
   }
   .bi-hextic{color:var(--green);}
   .bi-jackpot{color:var(--gold);}
+
   @media (max-width:480px){
     body{padding:16px 10px 40px;}
     .board-card, .description-card{padding:14px;}
@@ -854,12 +874,11 @@
     .mode-btn{width:30px;height:28px;font-size:13px;}
     .color-bet-row{justify-content:center;}
     .color-bet-info{min-width:0;flex:1 1 160px;}
-    table.bet-grid{border-spacing:3px;}
+    .bet-board{gap:3px;}
     .row-label-cell{padding:5px 4px 5px 6px;}
     .row-label-cell .cat-name{font-size:11px;gap:4px;}
     .row-label-cell .cat-mult{font-size:9px;}
     .info-icon{width:12px;height:12px;font-size:8px;}
-    .board-cell.square{padding:3px 2px;}
     .board-cell.square .bet-amt{font-size:11px;}
     .exact-digit-select{font-size:11px;padding:1px 0;}
     .col-num{font-size:10px;}
@@ -1371,6 +1390,22 @@
         const divider = document.createElement('div');
         divider.className = 'row-divider-line';
         gridBody.appendChild(divider);
+
+        const pickerLabel = document.createElement('div');
+        pickerLabel.className = 'board-cell picker-label';
+        pickerLabel.textContent = 'Pick digit';
+        gridBody.appendChild(pickerLabel);
+
+        for(let c=0;c<COLS;c++){
+          const pickerCell = document.createElement('div');
+          pickerCell.className = 'board-cell picker-cell';
+          const dashOption = `<option value=""${exactTargets[c]===''?' selected':''}>\u2013</option>`;
+          const options = dashOption + HEX_CHARS.split('').map(ch=>`<option value="${ch}"${ch===exactTargets[c]?' selected':''}>${ch}</option>`).join('');
+          pickerCell.innerHTML = `<select class="exact-digit-select" data-col="${c}">${options}</select>`;
+          const sel = pickerCell.querySelector('.exact-digit-select');
+          sel.addEventListener('change', e=>{ exactTargets[c] = e.target.value; });
+          gridBody.appendChild(pickerCell);
+        }
       }
 
       const label = document.createElement('div');
@@ -1387,19 +1422,7 @@
         cell.className = 'board-cell square';
         cell.dataset.row = r;
         cell.dataset.col = c;
-        if(row.key === 'exact'){
-          const dashOption = `<option value=""${exactTargets[c]===''?' selected':''}>\u2013</option>`;
-          const options = dashOption + HEX_CHARS.split('').map(ch=>`<option value="${ch}"${ch===exactTargets[c]?' selected':''}>${ch}</option>`).join('');
-          cell.innerHTML = `<select class="exact-digit-select" data-col="${c}">${options}</select><span class="bet-amt"></span>`;
-          const sel = cell.querySelector('.exact-digit-select');
-          sel.addEventListener('click', e=>e.stopPropagation());
-          sel.addEventListener('change', e=>{
-            e.stopPropagation();
-            exactTargets[c] = e.target.value;
-          });
-        } else {
-          cell.innerHTML = `<span class="bet-amt"></span>`;
-        }
+        cell.innerHTML = `<span class="bet-amt"></span>`;
         cell.addEventListener('click', onCellClick);
         gridBody.appendChild(cell);
       }
