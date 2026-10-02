@@ -541,8 +541,34 @@
     background:#000 !important;
     box-shadow:none;
     pointer-events:none;
-    z-index:3;
+    z-index:6;
   }
+  .wheel-token.has-bet{
+    color:#fff !important;
+  }
+  .wheel-token.has-bet::before{
+    content:'';
+    position:absolute;
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:#000;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    z-index:0;
+  }
+  .wheel-token.has-bet{
+    isolation:isolate;
+  }
+  .wheel-token.has-bet:not(.selected-roll){
+    border-color:rgba(255,255,255,0.85);
+  }
+  .wheel-token.has-bet.last{
+    border-color:var(--gold);
+  }
+  .wheel-token.has-bet > *{position:relative;z-index:2;}
+  .wheel-token-label{position:relative;z-index:2;display:block;line-height:1;}
   .wheel-spin-token{
     position:absolute;
     width:23px;
@@ -592,6 +618,11 @@
     flex-direction:column;
     gap:8px;
   }
+  .last-placed-colors-block{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .last-placed-colors{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .last-placed-color-dot{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);cursor:pointer;box-shadow:0 0 3px rgba(0,0,0,.5);transition:transform .12s ease,border-color .12s ease;}
+  .last-placed-color-dot:hover{transform:scale(1.08);border-color:var(--gold);}
+
   .picked-line{
     display:flex;
     align-items:center;
@@ -1025,6 +1056,8 @@
   }
   .hextic-selected-preview .swatch{width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.3);}
 
+
+  .wheel-token.selected-roll{border:3px solid #000 !important;box-shadow:0 0 0 1px rgba(255,255,255,.65);}
 </style>
 </head>
 <body>
@@ -1069,7 +1102,7 @@
 
     <div class="jackpot-panel" id="jackpotPanel">
       <div class="jackpot-row">
-        <span class="lbl">Jackpot potential &mdash; if you'd bet $</span>
+        <span class="lbl">Max potential &mdash; if you'd bet $</span>
         <input type="number" id="jackpotAmt" value="5" min="1" step="1">
         <span class="lbl">on every green square this round:</span>
       </div>
@@ -1121,9 +1154,13 @@
           </div>
           <button id="placeColorBtn" disabled>PLACE ON MATCHING SQUARES</button>
           <div class="color-bet-status" id="colorBetStatus">Uses your selected chip amount on every square that color would win.</div>
-          <div class="chosen-colors-block" id="chosenColorsBlock" style="display:none;">
+          <div class="chosen-colors-block" id="chosenColorsBlock">
             <span class="section-lbl">Colors in this bet:</span>
             <div class="chosen-colors" id="chosenColorsRow"></div>
+          </div>
+          <div class="last-placed-colors-block" id="lastPlacedColorsBlock">
+            <span class="section-lbl">Colors Last Placed:</span>
+            <div class="last-placed-colors" id="lastPlacedColorsRow"></div>
           </div>
         </div>
       </div>
@@ -1165,7 +1202,7 @@
         <div class="swatch" id="hexticModalSwatch"></div>
         <span id="hexticModalHex">#000000</span>
       </div>
-      <div class="hextic-modal-notice" style="color:#ff4d4d;">Hextic takes 1% only when the round finishes at a net loss. If you change your Hextic code, your jackpot will reset to $0.00.</div>
+      <div class="hextic-modal-notice" id="hexticChangeNotice" style="color:#ff4d4d;display:none;"></div>
       <div class="hextic-modal-actions">
         <button id="cancelHexticBtn" type="button">Cancel</button>
         <button id="saveHexticBtn" type="button">Save Combo</button>
@@ -1247,6 +1284,8 @@
   const colorBetStatus = document.getElementById('colorBetStatus');
   const chosenColorsBlock = document.getElementById('chosenColorsBlock');
   const chosenColorsRow = document.getElementById('chosenColorsRow');
+  const lastPlacedColorsBlock = document.getElementById('lastPlacedColorsBlock');
+  const lastPlacedColorsRow = document.getElementById('lastPlacedColorsRow');
   const useLastColorBtn = document.getElementById('useLastColorBtn');
   let pickedHex = null;
   let spinCount = 0;
@@ -1317,9 +1356,24 @@
     token.style.top = pos.top+'px';
     token.style.background = '#'+hexCode;
     token.style.color = pickTextColor(hexCode);
-    if(num !== null && num !== undefined) token.textContent = num;
+    if(num !== null && num !== undefined){
+      const label = document.createElement('span');
+      label.className = 'wheel-token-label';
+      label.textContent = num;
+      token.appendChild(label);
+    }
     token.title = '#'+hexCode;
     return token;
+  }
+
+  function setWheelTokenNumber(token, value){
+    let label = token.querySelector('.wheel-token-label');
+    if(!label){
+      label = document.createElement('span');
+      label.className = 'wheel-token-label';
+      token.appendChild(label);
+    }
+    label.textContent = value;
   }
 
   function addWheelToken(hexCode, num){
@@ -1329,18 +1383,27 @@
     wheelHistory.appendChild(token);
     const tokens = [...wheelHistory.querySelectorAll('.wheel-token')];
     tokens.forEach((el, index)=>{
-      el.textContent = index === tokens.length - 1 ? '1' : String(tokens.length - index);
+      setWheelTokenNumber(el, index === tokens.length - 1 ? '1' : String(tokens.length - index));
     });
     while(wheelHistory.querySelectorAll('.wheel-token').length > HISTORY_LIMIT){
       const old = wheelHistory.querySelector('.wheel-token');
       if(old) old.remove();
     }
     [...wheelHistory.querySelectorAll('.wheel-token')].forEach((el,index,arr)=>{
-      el.textContent = String(arr.length - index);
+      setWheelTokenNumber(el, String(arr.length - index));
     });
   }
 
   function addWheelBetToken(hexCode){
+    const wheelToken = [...wheelHistory.querySelectorAll('.wheel-token')].find(el=>el.title === '#'+hexCode);
+    if(wheelToken){
+      wheelToken.classList.add('has-bet');
+      wheelToken.dataset.placedSpin = spinCount;
+      wheelToken.style.color = '#fff';
+      const oldDot = wheelHistory.querySelector(`.wheel-bet-token[data-hex="${hexCode}"]`);
+      if(oldDot) oldDot.remove();
+      return;
+    }
     if(wheelHistory.querySelector(`.wheel-bet-token[data-hex="${hexCode}"]`)) return;
     const token = createWheelToken(hexCode, null, 'wheel-bet-token');
     token.dataset.hex = hexCode;
@@ -1353,12 +1416,22 @@
 
   function clearWheelBetTokens(){
     wheelHistory.querySelectorAll('.wheel-bet-token').forEach(el=>el.remove());
+    wheelHistory.querySelectorAll('.wheel-token.has-bet').forEach(el=>el.classList.remove('has-bet'));
   }
 
   function removeExpiredWheelBetTokens(){
     wheelHistory.querySelectorAll('.wheel-bet-token').forEach(el=>{
       const placedSpin = Number(el.dataset.placedSpin);
       if(Number.isFinite(placedSpin) && spinCount - placedSpin >= 1) el.remove();
+    });
+    wheelHistory.querySelectorAll('.wheel-token.has-bet').forEach(el=>{
+      const placedSpin = Number(el.dataset.placedSpin);
+      if(Number.isFinite(placedSpin) && spinCount - placedSpin >= 1){
+        el.classList.remove('has-bet');
+        delete el.dataset.placedSpin;
+        const hex = (el.title || '').replace('#','').toUpperCase();
+        if(/^[0-9A-F]{6}$/.test(hex)) el.style.color = pickTextColor(hex);
+      }
     });
   }
 
@@ -1392,7 +1465,16 @@
   }
 
 
+  function clearSelectedRoll(){
+    wheelHistory.querySelectorAll('.wheel-token.selected-roll').forEach(el=>{
+      el.classList.remove('selected-roll');
+      const hex = (el.title || '').replace('#','').toUpperCase();
+      if(/^[0-9A-F]{6}$/.test(hex)) el.style.color = pickTextColor(hex);
+    });
+  }
+
   function setPickedColor(hexCode, sourceText='Loaded from manual input'){
+    clearSelectedRoll();
     pickedHex = hexCode;
     const pos = wheelPointForHex(hexCode);
     miniPick.style.display = 'block';
@@ -1475,6 +1557,29 @@
   window.addEventListener('pointerup', ()=>{ miniPicking = false; });
 
   let chosenColors = [];
+  let lastPlacedColors = [];
+
+  function renderLastPlacedColors(){
+    lastPlacedColorsRow.innerHTML = '';
+    lastPlacedColors.forEach(hex=>{
+      const dot = document.createElement('div');
+      dot.className = 'last-placed-color-dot';
+      dot.style.background = '#'+hex;
+      dot.title = '#'+hex+' · last placed';
+      dot.addEventListener('click', ()=>{
+        if(spinning) return;
+        setPickedColor(hex, `Loaded #${hex} from Colors Last Placed.`);
+        const token = [...wheelHistory.querySelectorAll('.wheel-token')].find(el=>el.title === '#'+hex);
+        if(token){
+          clearSelectedRoll();
+          token.classList.add('selected-roll');
+          token.style.color = '#fff';
+        }
+      });
+      lastPlacedColorsRow.appendChild(dot);
+    });
+    lastPlacedColorsBlock.style.display = 'flex';
+  }
 
   function renderChosenColors(){
     chosenColorsRow.innerHTML = '';
@@ -1485,7 +1590,7 @@
       dot.title = '#'+hex;
       chosenColorsRow.appendChild(dot);
     });
-    chosenColorsBlock.style.display = chosenColors.length ? 'flex' : 'none';
+    chosenColorsBlock.style.display = 'flex';
   }
 
   function placeBetsForHex(hexCode){
@@ -1529,15 +1634,25 @@
     colorBetStatus.textContent = msg;
   }
 
+  function finishPreviousRollSelection(hexCode){
+    const token = [...wheelHistory.querySelectorAll('.wheel-token')].find(el=>el.title === '#'+hexCode);
+    if(token){
+      token.classList.remove('selected-roll');
+      token.style.color = '#fff';
+    }
+  }
+
   placeColorBtn.addEventListener('click', ()=>{
     if(spinning || !pickedHex) return;
     placeBetsForHex(pickedHex);
+    finishPreviousRollSelection(pickedHex);
   });
 
   playHexticBtn.addEventListener('click', ()=>{
     if(spinning || !hexticCombo) return;
     setPickedColor(hexticCombo, `Loaded #${hexticCombo} from your Hextic combo.`);
     placeBetsForHex(hexticCombo);
+    finishPreviousRollSelection(hexticCombo);
   });
 
   useLastColorBtn.addEventListener('click', ()=>{
@@ -1545,6 +1660,7 @@
     const hex = lastDigits.join('');
     setPickedColor(hex, `Loaded #${hex} from roll ${spinCount}.`);
     placeBetsForHex(hex);
+    finishPreviousRollSelection(hex);
   });
 
   function fmtMoney(amt){
@@ -1844,19 +1960,30 @@
   // ---------- spin ----------
   spinBtn.addEventListener('click', spin);
 
+  function setSpinControlsDisabled(disabled){
+    document.querySelectorAll('button, input, select').forEach(el=>{
+      if(disabled){
+        el.dataset.wasDisabled = el.disabled ? '1' : '0';
+        el.disabled = true;
+      }else{
+        el.disabled = el.dataset.wasDisabled === '1';
+        delete el.dataset.wasDisabled;
+      }
+    });
+  }
+
   function spin(){
     const total = bets.flat().reduce((a,b)=>a+b,0);
     if(total === 0 || spinning) return;
-    removeExpiredWheelBetTokens();
+    clearWheelBetTokens();
+    lastPlacedColors = chosenColors.slice();
+    renderLastPlacedColors();
+    chosenColors = [];
+    renderChosenColors();
+    clearSelectedRoll();
     spinning = true;
     miniPick.style.display = 'none';
-    spinBtn.disabled = true;
-    clearBtn.disabled = true;
-    rebetBtn.disabled = true;
-    clearBoardBtn.disabled = true;
-    document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = true);
-    placeColorBtn.disabled = true;
-    useLastColorBtn.disabled = true;
+    setSpinControlsDisabled(true);
     betGridTable.classList.add('grid-locked');
     resultDisplay.innerHTML = `<div class="hex-result" style="color:var(--muted);">spinning\u2026</div>`;
     document.querySelectorAll('.board-cell.square').forEach(td=>td.classList.remove('gold-win','green-outline'));
@@ -2027,18 +2154,21 @@
     addHistory(swatch, spinCount);
     addWheelToken(hexCode, spinCount);
 
+
     lastDigits = digits.slice();
     updateHexticDisplay();
     updateJackpotDisplay();
     clearWheelSpinToken();
     restorePastWheelTokens();
+    clearSelectedRoll();
 
     betGridTable.classList.remove('grid-locked');
     document.querySelectorAll('.exact-digit-select').forEach(el=>el.disabled = false);
+    spinning = false;
+    setSpinControlsDisabled(false);
     placeColorBtn.disabled = !pickedHex;
     if(pickedHex) miniPick.style.display = 'block';
     useLastColorBtn.disabled = false;
-    spinning = false;
     refreshGridDisplay();
   }
 
@@ -2053,6 +2183,11 @@
       if(spinning) return;
       const hex = swatch.replace('#','').toUpperCase();
       setPickedColor(hex, `Loaded #${hex} from roll ${chip.textContent}.`);
+      const token = [...wheelHistory.querySelectorAll('.wheel-token')].find(el=>el.title === '#'+hex);
+      if(token){
+        token.classList.add('selected-roll');
+        token.style.color = '#fff';
+      }
     });
     historyRow.insertBefore(chip, historyRow.firstChild);
     while(historyRow.children.length > HISTORY_LIMIT){
@@ -2074,7 +2209,7 @@
         draftHexticDigits[c] = sel.value;
         draftHexticChosen = true;
         updateHexticDraftPreview();
-        document.getElementById('saveHexticBtn').disabled = false;
+        updateHexticChangeNotice();
       });
       hexticSelectGrid.appendChild(wrap);
     }
@@ -2129,6 +2264,23 @@
     }
   }
 
+  function updateHexticChangeNotice(){
+    const notice = document.getElementById('hexticChangeNotice');
+    const saveBtn = document.getElementById('saveHexticBtn');
+    const next = draftHexticDigits.join('').toUpperCase();
+    const changing = !!hexticCombo && next !== hexticCombo;
+    if(changing){
+      notice.textContent = `WARNING: Your Hextic jackpot of $${fmtMoney(hexticJackpot)} will reset to $0.00 if you proceed with this new code.`;
+      notice.style.display = 'block';
+      saveBtn.textContent = 'Proceed';
+    }else{
+      notice.textContent = '';
+      notice.style.display = 'none';
+      saveBtn.textContent = 'Save Combo';
+    }
+    saveBtn.disabled = !draftHexticChosen;
+  }
+
   function openHexticModal(){
     if(hexticCombo){
       draftHexticDigits = hexticCombo.split('');
@@ -2138,16 +2290,18 @@
       draftHexticChosen = false;
     }
     renderHexticSelects();
-    document.getElementById('saveHexticBtn').disabled = !draftHexticChosen;
+    updateHexticChangeNotice();
     hexticModal.classList.add('open');
   }
 
   function closeHexticModal(){
+    if(!hexticCombo || !draftHexticChosen) return;
     hexticModal.classList.remove('open');
   }
 
   hexticPreview.addEventListener('click', openHexticModal);
-  hexticModalWheel.addEventListener('click', e=>{
+  let hexticWheelDragging = false;
+  function pickHexticFromPointer(e){
     const rect = hexticModalWheel.getBoundingClientRect();
     let dx = e.clientX - rect.left - rect.width/2;
     let dy = e.clientY - rect.top - rect.height/2;
@@ -2165,13 +2319,32 @@
     draftHexticDigits = nextHex.split('');
     draftHexticChosen = true;
     renderHexticSelects();
-    document.getElementById('saveHexticBtn').disabled = false;
+    updateHexticChangeNotice();
+  }
+  hexticModalWheel.style.touchAction = 'none';
+  hexticModalWheel.addEventListener('pointerdown', e=>{
+    if(spinning) return;
+    hexticWheelDragging = true;
+    hexticModalWheel.setPointerCapture?.(e.pointerId);
+    pickHexticFromPointer(e);
+    e.preventDefault();
   });
-  document.getElementById('closeHexticBtn').addEventListener('click', ()=>{ if(draftHexticChosen) closeHexticModal(); });
-  document.getElementById('cancelHexticBtn').addEventListener('click', ()=>{ if(draftHexticChosen) closeHexticModal(); });
-  hexticModal.addEventListener('click', e=>{ if(e.target===hexticModal && draftHexticChosen) closeHexticModal(); });
+  hexticModalWheel.addEventListener('pointermove', e=>{
+    if(!hexticWheelDragging || spinning) return;
+    pickHexticFromPointer(e);
+    e.preventDefault();
+  });
+  hexticModalWheel.addEventListener('pointerup', e=>{
+    hexticWheelDragging = false;
+    hexticModalWheel.releasePointerCapture?.(e.pointerId);
+  });
+  hexticModalWheel.addEventListener('pointercancel', ()=>{ hexticWheelDragging = false; });
+
+  document.getElementById('closeHexticBtn').addEventListener('click', ()=>{ if(spinning) return; if(draftHexticChosen) closeHexticModal(); });
+  document.getElementById('cancelHexticBtn').addEventListener('click', ()=>{ if(spinning) return; if(draftHexticChosen) closeHexticModal(); });
+  hexticModal.addEventListener('click', e=>{ if(spinning) return; if(e.target===hexticModal && draftHexticChosen) closeHexticModal(); });
   document.getElementById('saveHexticBtn').addEventListener('click', ()=>{
-    if(!draftHexticChosen) return;
+    if(spinning || !draftHexticChosen) return;
     const next = draftHexticDigits.join('').toUpperCase();
     if(!/^[0-9A-F]{6}$/.test(next)) return;
     if(next !== hexticCombo){
